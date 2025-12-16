@@ -89,12 +89,27 @@
         
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 242, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); } }
 
+        /* --- HEADER UPDATED FOR CORNER POSITIONS --- */
         .header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.2);
-            border-radius: 15px; border: 1px solid var(--glass-border);
+            display: flex; 
+            justify-content: space-between; /* Forces items to far left and far right */
+            align-items: center;
+            margin-bottom: 15px; 
+            padding: 10px 5px; /* Minimal side padding to get close to corners */
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px; 
+            border: 1px solid var(--glass-border);
+            position: relative; /* Anchor for dropdown */
         }
-        .points-box { color: #ffd700; font-weight: 700; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        
+        .points-box { 
+            color: #ffd700; 
+            font-weight: 700; 
+            font-size: 1.2rem; 
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); 
+            display: flex; align-items: center; gap: 5px;
+        }
+        
         .profile-icon {
             cursor: pointer; width: 45px; height: 45px; border-radius: 50%;
             background: linear-gradient(45deg, var(--secondary), var(--primary));
@@ -102,6 +117,31 @@
             box-shadow: 0 0 15px rgba(255, 0, 204, 0.5); border: 2px solid white; position: relative;
         }
         .notif-dot { position: absolute; top: 0; right: 0; width: 12px; height: 12px; background: #ff0000; border-radius: 50%; border: 2px solid white; display: none; }
+
+        /* --- PROFILE DROPDOWN (UPDATED POSITION & ANIMATION) --- */
+        #profileDropdown {
+            position: absolute; 
+            top: 70px; /* Positioned just below the header */
+            right: 5px; /* Aligned to the Right edge */
+            background: rgba(20, 20, 35, 0.98); 
+            padding: 20px; 
+            border-radius: 15px 5px 15px 15px; /* Cool corner radius */
+            display: none; 
+            z-index: 3000; 
+            border: 1px solid var(--glass-border);
+            width: 240px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+            text-align: left; /* Keep text aligned left inside */
+            
+            /* Animation Settings */
+            transform-origin: top right; /* Animation starts from the profile icon corner */
+            animation: menuUnfold 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes menuUnfold {
+            from { opacity: 0; transform: scale(0.7) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
 
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -158,13 +198,6 @@
 
         @keyframes blink { 50% { opacity: 0.5; transform: scale(0.9); } }
         .blink-emoji { animation: blink 1s infinite; display: inline-block; }
-
-        #profileDropdown {
-            position: absolute; top: 75px; right: 20px;
-            background: rgba(20, 20, 35, 0.95); padding: 20px; border-radius: 15px;
-            display: none; z-index: 3000; border: 1px solid var(--glass-border);
-            width: 240px; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-        }
         
         .validation-msg { color: var(--danger); font-size: 0.8rem; display: none; margin-bottom: 10px; text-align: left; }
         .avatar-grid { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
@@ -211,27 +244,28 @@
 <div id="dashboardScreen" class="view">
     <div class="header">
         <div class="points-box">💎 <span id="displayPoints">0</span></div>
+        
         <div class="profile-icon" onclick="toggleProfile()">
             <span id="profileInit">👽</span>
             <div id="notifDot" class="notif-dot"></div>
         </div>
-    </div>
-
-    <div id="profileDropdown">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
-            <div id="menuAvatar" style="font-size:2rem;">👽</div>
-            <div>
-                <h4 id="menuName" style="margin:0; text-align:left;">User</h4>
-                <p id="menuUsername" style="font-size:0.7rem; color:#aaa; margin:0;">@user</p>
+        
+        <div id="profileDropdown">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+                <div id="menuAvatar" style="font-size:2rem;">👽</div>
+                <div>
+                    <h4 id="menuName" style="margin:0; text-align:left;">User</h4>
+                    <p id="menuUsername" style="font-size:0.7rem; color:#aaa; margin:0;">@user</p>
+                </div>
             </div>
+            <button onclick="openAddFriend()" class="btn-outline">➕ Add New Friend</button>
+            <button onclick="openFriendModal()" class="btn-outline">👥 My Friends & Requests</button>
+            <button onclick="openEditProfile()" class="btn-outline">✏️ Edit Profile</button>
+            <button onclick="openMatchHistory()" class="btn-outline">📜 Match History</button>
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <button onclick="logout()" class="btn-outline" style="color:#aaa;">Logout</button>
+            <button onclick="openDeleteAccount()" class="btn-outline" style="color:var(--danger); border-color:rgba(255,68,68,0.3);">Delete Account</button>
         </div>
-        <button onclick="openAddFriend()" class="btn-outline">➕ Add New Friend</button>
-        <button onclick="openFriendModal()" class="btn-outline">👥 My Friends & Requests</button>
-        <button onclick="openEditProfile()" class="btn-outline">✏️ Edit Profile</button>
-        <button onclick="openMatchHistory()" class="btn-outline">📜 Match History</button>
-        <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
-        <button onclick="logout()" class="btn-outline" style="color:#aaa;">Logout</button>
-        <button onclick="openDeleteAccount()" class="btn-outline" style="color:var(--danger); border-color:rgba(255,68,68,0.3);">Delete Account</button>
     </div>
 
     <div id="requestArea" style="display:none; background:rgba(255,165,0,0.15); padding:15px; border-radius:15px; margin-bottom:20px; border:1px solid orange;">
