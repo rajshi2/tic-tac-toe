@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Ultimate: Neon Edition</title>
+    <title>Tic-Tac-Toe: Neon Ultimate</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -34,65 +34,48 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden; /* Prevent background scroll */
+            overflow: hidden;
         }
 
-        /* --- Glassmorphism Container --- */
         .container {
             width: 90%;
             max-width: 450px;
             background: var(--glass);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            padding: 30px;
+            padding: 25px;
             border-radius: 24px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             border: 1px solid var(--glass-border);
             position: relative;
-            animation: fadeIn 0.8s ease-out;
+            text-align: center;
+            max-height: 95vh;
+            overflow-y: auto;
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* --- Transitions --- */
+        .view { display: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .active { display: block; opacity: 1; }
 
-        h2, h3 { font-family: 'Orbitron', sans-serif; text-align: center; margin-top: 0; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+        h2, h3 { font-family: 'Orbitron', sans-serif; margin-top: 0; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
 
-        /* --- Inputs & Buttons --- */
+        /* --- UI Elements --- */
         input {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(0,0,0,0.3);
-            color: white;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.3s;
-            font-family: 'Poppins', sans-serif;
+            width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);
+            color: white; box-sizing: border-box; outline: none; font-family: 'Poppins', sans-serif;
         }
         input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
 
-        /* Main Game Buttons */
         .btn-game {
-            width: 100%;
-            padding: 18px;
-            margin: 12px 0;
+            width: 100%; padding: 16px; margin: 10px 0;
             background: linear-gradient(90deg, var(--primary), #00a8ff);
-            color: #000;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            color: #000; border: none; border-radius: 15px; cursor: pointer;
+            font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px;
+            transition: all 0.3s; box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
         }
         .btn-game:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 0 25px rgba(0, 242, 255, 0.6); }
 
-        /* Secondary Buttons (Outline) */
         .btn-outline {
             width: 100%; padding: 12px; margin: 5px 0;
             background: transparent; border: 2px solid rgba(255,255,255,0.2);
@@ -102,74 +85,61 @@
 
         .btn-danger { background: linear-gradient(90deg, #ff416c, #ff4b2b); color: white; border: none; }
         .btn-success { background: linear-gradient(90deg, #11998e, #38ef7d); color: white; border: none; }
+        .btn-start { font-size: 1.5rem; padding: 20px; animation: pulse 2s infinite; }
+        .btn-small { padding: 5px 10px; font-size: 0.8rem; width: auto; margin: 0; }
         
-        .btn-small { padding: 6px 12px; width: auto; font-size: 0.8rem; margin: 0; border-radius: 8px; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 242, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); } }
 
-        /* --- Dashboard Header --- */
+        /* --- Header & Profile --- */
         .header {
             display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 25px; padding: 15px;
-            background: rgba(0,0,0,0.2); border-radius: 15px;
-            border: 1px solid var(--glass-border);
+            margin-bottom: 20px; padding: 12px; background: rgba(0,0,0,0.2);
+            border-radius: 15px; border: 1px solid var(--glass-border);
         }
-        .points-box { color: #ffd700; font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 5px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-        
-        /* Profile Avatar */
+        .points-box { color: #ffd700; font-weight: 700; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
         .profile-icon {
-            cursor: pointer;
-            width: 50px; height: 50px;
-            border-radius: 50%;
+            cursor: pointer; width: 45px; height: 45px; border-radius: 50%;
             background: linear-gradient(45deg, var(--secondary), var(--primary));
-            display: flex; justify-content: center; align-items: center;
-            font-size: 1.5rem;
-            box-shadow: 0 0 15px rgba(255, 0, 204, 0.5);
-            border: 2px solid white;
-            transition: 0.3s;
-            position: relative;
+            display: flex; justify-content: center; align-items: center; font-size: 1.5rem;
+            box-shadow: 0 0 15px rgba(255, 0, 204, 0.5); border: 2px solid white; position: relative;
         }
-        .profile-icon:hover { transform: rotate(10deg) scale(1.1); }
-        .notif-dot { position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: #ff0000; border-radius: 50%; border: 2px solid white; display: none; }
+        .notif-dot { position: absolute; top: 0; right: 0; width: 12px; height: 12px; background: #ff0000; border-radius: 50%; border: 2px solid white; display: none; }
 
         /* --- Modals --- */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);
             display: none; justify-content: center; align-items: center; z-index: 2000;
         }
         .modal-box {
-            background: #1a1a2e; padding: 30px; border-radius: 20px;
-            width: 90%; max-width: 400px; border: 1px solid var(--primary);
-            box-shadow: 0 0 40px rgba(0, 242, 255, 0.2);
-            text-align: center; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: #1a1a2e; padding: 25px; border-radius: 20px;
+            width: 90%; max-width: 380px; border: 1px solid var(--primary);
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.2); text-align: center;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-        /* Profile Dropdown */
-        #profileDropdown {
-            position: absolute; top: 85px; right: 20px;
-            background: rgba(20, 20, 35, 0.95); padding: 20px; border-radius: 15px;
-            display: none; z-index: 100; border: 1px solid var(--glass-border);
-            width: 240px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-        #profileDropdown button { text-align: left; padding-left: 15px; }
-
-        /* Avatar Selection Grid */
-        .avatar-grid { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
-        .avatar-option { 
-            font-size: 2rem; cursor: pointer; padding: 5px; border-radius: 50%; border: 2px solid transparent; transition: 0.2s; 
-        }
-        .avatar-option:hover { transform: scale(1.2); }
-        .avatar-option.selected { border-color: var(--primary); background: rgba(0, 242, 255, 0.2); }
-
-        /* Game Board */
+        /* --- SQUARE & LARGE GAME BOARD --- */
         .game-board {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 25px 0;
-            padding: 10px; border-radius: 20px; background: rgba(0,0,0,0.2);
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; 
+            margin: 20px auto;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1 / 1; /* Makes it strictly square */
+            padding: 10px; 
+            border-radius: 20px; 
+            background: rgba(0,0,0,0.2);
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
         .cell {
-            background: rgba(255,255,255,0.05); height: 95px;
+            background: rgba(255,255,255,0.05); 
+            width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
-            font-size: 3.5rem; cursor: pointer; border-radius: 15px;
+            font-size: 4rem; /* Large text */
+            cursor: pointer; border-radius: 15px;
             transition: all 0.2s; font-family: 'Orbitron', sans-serif;
             border: 1px solid rgba(255,255,255,0.05);
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
@@ -178,95 +148,152 @@
         .cell.x { color: var(--primary); text-shadow: 0 0 15px var(--primary); }
         .cell.o { color: var(--secondary); text-shadow: 0 0 15px var(--secondary); }
 
-        /* Online Status */
-        .online-dot { height: 8px; width: 8px; background-color: #555; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .is-online { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
-        
-        /* List Items */
-        .list-item { 
-            background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; margin-bottom: 8px; 
-            display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; border: 1px solid rgba(255,255,255,0.05);
-        }
+        /* Board Rotation Logic */
+        .rotated { transform: rotate(180deg); }
+        /* Keep text upright even if board rotates (Optional - normally flip board means flip text too for opponent) */
+        /* .rotated .cell { transform: rotate(180deg); } */ 
 
-        .view { display: none; }
-        .active { display: block; }
-        .validation-msg { color: var(--danger); font-size: 0.8rem; display: none; text-align: left; margin-bottom: 10px; }
+        /* Animations */
+        @keyframes blink { 50% { opacity: 0.5; transform: scale(0.9); } }
+        .blink-emoji { animation: blink 1s infinite; display: inline-block; }
+
+        /* Profile Dropdown */
+        #profileDropdown {
+            position: absolute; top: 75px; right: 20px;
+            background: rgba(20, 20, 35, 0.95); padding: 20px; border-radius: 15px;
+            display: none; z-index: 3000; border: 1px solid var(--glass-border);
+            width: 240px; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        
+        .validation-msg { color: var(--danger); font-size: 0.8rem; display: none; margin-bottom: 10px; text-align: left; }
+        .avatar-grid { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
+        .avatar-option { font-size: 2rem; cursor: pointer; padding: 5px; border-radius: 50%; border: 2px solid transparent; transition: 0.2s; }
+        .avatar-option.selected { border-color: var(--primary); background: rgba(0, 242, 255, 0.2); }
+        .list-item { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .online-dot { height: 10px; width: 10px; background-color: #555; border-radius: 50%; display: inline-block; margin-right: 5px; border:1px solid #fff; }
+        .is-online { background-color: #00ff88; box-shadow: 0 0 10px #00ff88; }
     </style>
 </head>
 <body>
 
-<div id="editProfileModal" class="modal">
-    <div class="modal-box">
-        <h3>Edit Profile</h3>
-        <input type="text" id="editFullName" placeholder="Full Name">
-        <input type="text" id="editUsername" placeholder="Username (Unique)" oninput="validateEditUsername()">
-        <p id="editUserError" class="validation-msg">Invalid format or taken</p>
+<div id="splashScreen" class="view active" style="text-align: center; padding-top: 50px;">
+    <h1 style="font-family: 'Orbitron'; font-size: 3rem; color: var(--primary); text-shadow: 0 0 20px var(--primary);">TIC TAC TOE<br><span style="color:white; font-size:1.5rem;">ULTIMATE</span></h1>
+    <div style="font-size: 5rem; margin: 30px 0; animation: pulse 2s infinite;">🎮</div>
+    <button class="btn-game btn-start" onclick="checkLoginAndStart()">START GAME</button>
+</div>
+
+<div id="authScreen" class="view">
+    <h2>LOGIN</h2>
+    <div id="loginForm">
+        <input type="email" id="email" placeholder="Email Address">
+        <input type="password" id="password" placeholder="Password">
         
-        <p style="margin: 10px 0; color:#aaa;">Choose Avatar:</p>
-        <div class="avatar-grid">
-            <div class="avatar-option" onclick="selectAvatar('👽')">👽</div>
-            <div class="avatar-option" onclick="selectAvatar('🐱')">🐱</div>
-            <div class="avatar-option" onclick="selectAvatar('💀')">💀</div>
-            <div class="avatar-option" onclick="selectAvatar('🤖')">🤖</div>
-            <div class="avatar-option" onclick="selectAvatar('🦊')">🦊</div>
+        <div id="signupFields" style="display:none;">
+            <input type="text" id="fullName" placeholder="Full Name">
+            <input type="text" id="username" placeholder="Username (a-z, 0-9)" oninput="validateUsername()">
+            <p id="usernameError" class="validation-msg">Invalid format</p>
+            <div style="display:flex; gap:10px; align-items:center; background:rgba(0,0,0,0.3); padding:10px; border-radius:12px;">
+                <span id="captchaDisplay" style="color:var(--primary); font-weight:bold;">? + ?</span>
+                <input type="number" id="captchaInput" placeholder="=" style="width:70px; margin:0; text-align:center;">
+            </div>
         </div>
-        <input type="hidden" id="selectedAvatar">
 
-        <button onclick="saveProfile()" class="btn-game" style="margin-top:20px;">Save Changes</button>
-        <button onclick="closeModals()" class="btn-outline">Cancel</button>
+        <button onclick="handleAuth()" id="authBtn" class="btn-game">ENTER</button>
+        <div style="display:flex; justify-content:space-between; margin:10px 0; font-size:0.9rem;">
+            <span onclick="openForgotPassword()" style="color:#aaa; cursor:pointer;">Forgot Password?</span>
+            <span onclick="toggleAuthMode()" style="color:var(--primary); cursor:pointer; font-weight:bold;" id="toggleText">Create Account</span>
+        </div>
+        <button class="btn-outline" onclick="playAsGuest()">Play as Guest</button>
     </div>
 </div>
 
-<div id="historyModal" class="modal">
-    <div class="modal-box">
-        <h3>📜 Match History</h3>
-        <p style="font-size:0.8rem; color:#aaa;">(Friends Only)</p>
-        <div id="historyListContainer" style="max-height:300px; overflow-y:auto; text-align:left;">Loading...</div>
-        <button onclick="closeModals()" class="btn-outline" style="margin-top:15px;">Close</button>
-    </div>
-</div>
-
-<div id="forgotPasswordModal" class="modal">
-    <div class="modal-box">
-        <h3>Reset Password</h3>
-        <input type="email" id="resetEmailInput" placeholder="Enter your email">
-        <button onclick="sendResetLink()" class="btn-game">Send Link</button>
-        <button onclick="closeModals()" class="btn-outline">Cancel</button>
-    </div>
-</div>
-
-<div id="deleteAccountModal" class="modal">
-    <div class="modal-box" style="border: 2px solid red;">
-        <h3 style="color:var(--danger)">⚠️ Delete Account?</h3>
-        <p>This action is permanent. You will lose all 💎 and friends.</p>
-        <button onclick="confirmDeleteAccount()" class="btn-danger" style="width:100%; padding:15px; margin-top:10px;">Yes, Delete Everything</button>
-        <button onclick="closeModals()" class="btn-outline">Cancel</button>
-    </div>
-</div>
-
-<div id="challengeModal" class="modal">
-    <div class="modal-box">
-        <h2>⚔️ Challenge!</h2>
-        <p id="challengeMsg" style="font-size:1.2rem; margin:15px 0;">Player wants to play.</p>
-        <p style="color: #ffd700;">Entry Fee: 100💎</p>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="acceptChallenge()" class="btn-success" style="flex:1; padding:15px; border-radius:10px;">Accept</button>
-            <button onclick="rejectChallenge()" class="btn-danger" style="flex:1; padding:15px; border-radius:10px;">Reject</button>
+<div id="dashboardScreen" class="view">
+    <div class="header">
+        <div class="points-box">💎 <span id="displayPoints">0</span></div>
+        <div class="profile-icon" onclick="toggleProfile()">
+            <span id="profileInit">👽</span>
+            <div id="notifDot" class="notif-dot"></div>
         </div>
     </div>
-</div>
 
-<div id="waitingModal" class="modal">
-    <div class="modal-box">
-        <h3>Waiting for Opponent...</h3>
-        <div style="font-size:3rem; margin:20px; animation:spin 2s infinite linear;">⏳</div>
-        <button onclick="cancelInvite()" class="btn-danger">Cancel Request</button>
+    <div id="profileDropdown">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+            <div id="menuAvatar" style="font-size:2rem;">👽</div>
+            <div>
+                <h4 id="menuName" style="margin:0; text-align:left;">User</h4>
+                <p id="menuUsername" style="font-size:0.7rem; color:#aaa; margin:0;">@user</p>
+            </div>
+        </div>
+        <button onclick="openAddFriend()" class="btn-outline">➕ Add New Friend</button>
+        <button onclick="openFriendModal()" class="btn-outline">👥 My Friends & Requests</button>
+        <button onclick="openEditProfile()" class="btn-outline">✏️ Edit Profile</button>
+        <button onclick="openMatchHistory()" class="btn-outline">📜 Match History</button>
+        <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+        <button onclick="logout()" class="btn-outline" style="color:#aaa;">Logout</button>
+        <button onclick="openDeleteAccount()" class="btn-outline" style="color:var(--danger); border-color:rgba(255,68,68,0.3);">Delete Account</button>
+    </div>
+
+    <div id="requestArea" style="display:none; background:rgba(255,165,0,0.15); padding:15px; border-radius:15px; margin-bottom:20px; border:1px solid orange;">
+        <h4 style="margin:0 0 10px 0; color:orange;">New Requests 🔔</h4>
+        <div id="requestList"></div>
+    </div>
+
+    <h3 style="margin: 20px 0; font-size:0.9rem; letter-spacing:2px;">SELECT MODE</h3>
+    <button onclick="openGameSelector()" class="btn-game"><span>⚔️</span> Online (100💎)</button>
+    <button onclick="openOfflineSetup()" class="btn-game" style="background: linear-gradient(90deg, #ff00cc, #333399); color:white;"><span>📱</span> 1 vs 1 Offline</button>
+    <button onclick="playBot()" class="btn-game" style="background: linear-gradient(90deg, #8e2de2, #4a00e0); color:white;"><span>🤖</span> VS Bot (Free)</button>
+
+    <div id="friendSelector" style="display:none; margin-top:20px; background:rgba(0,0,0,0.4); padding:20px; border-radius:15px;">
+        <h4 style="margin-top:0">Challenge Friend</h4>
+        <div id="onlineFriendsList" style="text-align:left; max-height:200px; overflow-y:auto;"></div>
+        <button onclick="document.getElementById('friendSelector').style.display='none'" class="btn-outline">Cancel</button>
     </div>
 </div>
+
+<div id="gameScreen" class="view">
+    <div class="header">
+        <button onclick="exitActiveGame()" class="btn-outline" style="width:auto; padding:8px 15px;">QUIT</button>
+        <div id="turnDisplay" style="font-weight:bold; font-size:1.2rem;">TURN: X</div>
+    </div>
+    
+    <div id="boardContainer" class="game-board">
+        <div class="cell" onclick="move(0)"></div>
+        <div class="cell" onclick="move(1)"></div>
+        <div class="cell" onclick="move(2)"></div>
+        <div class="cell" onclick="move(3)"></div>
+        <div class="cell" onclick="move(4)"></div>
+        <div class="cell" onclick="move(5)"></div>
+        <div class="cell" onclick="move(6)"></div>
+        <div class="cell" onclick="move(7)"></div>
+        <div class="cell" onclick="move(8)"></div>
+    </div>
+</div>
+
+<div id="offlineSetupModal" class="modal">
+    <div class="modal-box">
+        <h3>1 vs 1 Offline</h3>
+        <p>Enable Board Flip?</p>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:20px;">Board will rotate after every move.</p>
+        <div style="display:flex; gap:10px;">
+            <button onclick="startOfflineGame(true)" class="btn-success">Yes, Flip</button>
+            <button onclick="startOfflineGame(false)" class="btn-game">No, Static</button>
+        </div>
+        <button onclick="closeModals()" class="btn-outline" style="margin-top:10px;">Cancel</button>
+    </div>
+</div>
+
+<div id="friendsModal" class="modal"><div class="modal-box"><h3>Friends & Requests</h3><h4 style="text-align:left;color:orange;font-size:0.9rem;margin-bottom:5px;">Requests</h4><div id="modalRequestList" style="margin-bottom:15px;"><small style="color:#aaa">None</small></div><h4 style="text-align:left;color:var(--primary);font-size:0.9rem;margin-bottom:5px;">My Friends</h4><div id="modalFriendList">Loading...</div><button onclick="closeModals()" class="btn-outline" style="margin-top:20px;">Close</button></div></div>
+<div id="editProfileModal" class="modal"><div class="modal-box"><h3>Edit Profile</h3><input type="text" id="editFullName" placeholder="Full Name"><input type="text" id="editUsername" placeholder="Username" oninput="validateEditUsername()"><p id="editUserError" class="validation-msg">Taken or invalid</p><div class="avatar-grid"><div class="avatar-option" onclick="selectAvatar('👽')">👽</div><div class="avatar-option" onclick="selectAvatar('🐱')">🐱</div><div class="avatar-option" onclick="selectAvatar('💀')">💀</div><div class="avatar-option" onclick="selectAvatar('🤖')">🤖</div><div class="avatar-option" onclick="selectAvatar('🦊')">🦊</div></div><input type="hidden" id="selectedAvatar"><button onclick="saveProfile()" class="btn-game">Save</button><button onclick="closeModals()" class="btn-outline">Cancel</button></div></div>
+<div id="historyModal" class="modal"><div class="modal-box"><h3>History</h3><div id="historyListContainer" style="max-height:300px; overflow:auto;">Loading...</div><button onclick="closeModals()" class="btn-outline">Close</button></div></div>
+<div id="forgotPasswordModal" class="modal"><div class="modal-box"><h3>Reset</h3><input type="email" id="resetEmailInput" placeholder="Email"><button onclick="sendResetLink()" class="btn-game">Send</button><button onclick="closeModals()" class="btn-outline">Cancel</button></div></div>
+<div id="deleteAccountModal" class="modal"><div class="modal-box" style="border:2px solid red;"><h3 style="color:var(--danger)">Delete?</h3><button onclick="confirmDeleteAccount()" class="btn-danger">Yes</button><button onclick="closeModals()" class="btn-outline">No</button></div></div>
+<div id="challengeModal" class="modal"><div class="modal-box"><h2>Game Request</h2><p id="challengeMsg"></p><button onclick="acceptChallenge()" class="btn-success">Accept</button><button onclick="rejectChallenge()" class="btn-danger">Reject</button></div></div>
+<div id="waitingModal" class="modal"><div class="modal-box"><h3>Waiting...</h3><div style="font-size:3rem;margin:20px;animation:spin 2s infinite linear">⏳</div><button onclick="cancelInvite()" class="btn-danger">Cancel</button></div></div>
+<div id="addFriendModal" class="modal"><div class="modal-box"><h3>Add</h3><div style="display:flex;gap:5px"><button id="btnTabLink" class="btn-outline" onclick="switchTab('link')">Link</button><button id="btnTabUser" class="btn-outline" onclick="switchTab('user')">User</button></div><div id="tabLink"><input id="shareLinkInput" readonly><button onclick="copyLink()" class="btn-game">Copy</button></div><div id="tabUser" style="display:none"><input id="searchUserInput"><button onclick="searchAndAdd()" class="btn-game">Send</button><p id="searchMsg"></p></div><button onclick="closeModals()" class="btn-outline">Close</button></div></div>
 
 <div id="winnerModal" class="modal">
     <div class="modal-box">
-        <h1 id="goEmoji" style="font-size: 5rem; margin: 0;"></h1>
+        <h1 id="goEmoji" class="blink-emoji" style="font-size: 5rem; margin: 0;"></h1>
         <h2 id="goTitle"></h2>
         <p id="goMsg"></p>
         <p id="goPoints" style="color:#ffd700; font-weight:bold;"></p>
@@ -274,130 +301,8 @@
     </div>
 </div>
 
-<div id="friendsModal" class="modal">
-    <div class="modal-box">
-        <h3>My Friends</h3>
-        <div id="modalFriendList" style="text-align:left;">Loading...</div>
-        <button onclick="closeModals()" class="btn-outline" style="margin-top:20px;">Close</button>
-    </div>
-</div>
-
-<div id="addFriendModal" class="modal">
-    <div class="modal-box">
-        <h3>Add Friend</h3>
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <button onclick="switchTab('link')" id="btnTabLink" class="btn-outline" style="flex:1;">Link</button>
-            <button onclick="switchTab('user')" id="btnTabUser" class="btn-outline" style="flex:1;">Username</button>
-        </div>
-        <div id="tabLink">
-            <input type="text" id="shareLinkInput" readonly style="text-align:center;">
-            <button onclick="copyLink()" class="btn-game">Copy Link</button>
-        </div>
-        <div id="tabUser" style="display:none;">
-            <input type="text" id="searchUserInput" placeholder="Enter exact username">
-            <button onclick="searchAndAdd()" class="btn-game">Send Request</button>
-            <p id="searchMsg" style="font-size:0.8rem; height:20px;"></p>
-        </div>
-        <button onclick="closeModals()" class="btn-outline" style="margin-top:10px;">Close</button>
-    </div>
-</div>
-
-<div class="container">
-    
-    <div id="authScreen" class="view active">
-        <h2>TIC-TAC-TOE <br><span style="color:var(--primary)">ULTIMATE</span></h2>
-        <div id="loginForm">
-            <input type="email" id="email" placeholder="Email Address">
-            <input type="password" id="password" placeholder="Password">
-            
-            <div id="signupFields" style="display:none;">
-                <input type="text" id="fullName" placeholder="Full Name">
-                <input type="text" id="username" placeholder="Username (Unique)" oninput="validateUsername()">
-                <p id="usernameError" class="validation-msg">Invalid characters</p>
-                <div style="display:flex; gap:10px; align-items:center; background:rgba(0,0,0,0.3); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
-                    <span id="captchaDisplay" style="color:var(--primary); font-weight:bold; font-size:1.2rem;">? + ?</span>
-                    <input type="number" id="captchaInput" placeholder="=" style="width:70px; margin:0; text-align:center;">
-                </div>
-            </div>
-
-            <button onclick="handleAuth()" id="authBtn" class="btn-game">LOGIN</button>
-            
-            <div style="display:flex; justify-content:space-between; margin:10px 0; font-size:0.9rem;">
-                <span onclick="openForgotPassword()" style="color:#aaa; cursor:pointer;">Forgot Password?</span>
-                <span onclick="toggleAuthMode()" style="color:var(--primary); cursor:pointer; font-weight:bold;" id="toggleText">Create Account</span>
-            </div>
-
-            <button class="btn-outline" onclick="playAsGuest()">Play as Guest</button>
-        </div>
-    </div>
-
-    <div id="dashboardScreen" class="view">
-        <div class="header">
-            <div class="points-box">💎 <span id="displayPoints">0</span></div>
-            <div class="profile-icon" onclick="toggleProfile()">
-                <span id="profileInit">👽</span>
-                <div id="notifDot" class="notif-dot"></div>
-            </div>
-        </div>
-
-        <div id="profileDropdown">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
-                <div id="menuAvatar" style="font-size:2rem;">👽</div>
-                <div>
-                    <h4 id="menuName" style="margin:0; text-align:left;">User</h4>
-                    <p id="menuUsername" style="font-size:0.7rem; color:#aaa; margin:0;">@user</p>
-                </div>
-            </div>
-            
-            <button onclick="openEditProfile()" class="btn-outline">✏️ Edit Profile</button>
-            <button onclick="openMatchHistory()" class="btn-outline">📜 Match History</button>
-            <button onclick="openFriendModal()" class="btn-outline">👥 My Friends</button>
-            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
-            <button onclick="logout()" class="btn-outline" style="color:#aaa;">Logout</button>
-            <button onclick="openDeleteAccount()" class="btn-outline" style="color:var(--danger); border-color:rgba(255,68,68,0.3);">Delete Account</button>
-        </div>
-
-        <div id="requestArea" style="display:none; background:rgba(255,165,0,0.15); padding:15px; border-radius:15px; margin-bottom:20px; border:1px solid orange;">
-            <h4 style="margin:0 0 10px 0; color:orange; text-align:left;">Friend Requests 🔔</h4>
-            <div id="requestList"></div>
-        </div>
-
-        <h3 style="margin: 20px 0; opacity:0.8; letter-spacing:2px; font-size:0.9rem;">GAME MODES</h3>
-        <button onclick="openGameSelector()" class="btn-game">
-            <span>⚔️</span> Play Online (100💎)
-        </button>
-        <button onclick="playBot()" class="btn-game" style="background: linear-gradient(90deg, #8e2de2, #4a00e0); color:white;">
-            <span>🤖</span> Play vs Bot (Local)
-        </button>
-
-        <div id="friendSelector" style="display:none; margin-top:20px; background:rgba(0,0,0,0.4); padding:20px; border-radius:15px; border:1px solid var(--glass-border);">
-            <h4 style="margin-top:0">Challenge a Friend</h4>
-            <div id="onlineFriendsList" style="text-align:left; max-height:200px; overflow-y:auto;"></div>
-            <button onclick="document.getElementById('friendSelector').style.display='none'" class="btn-outline" style="margin-top:10px;">Cancel</button>
-        </div>
-    </div>
-
-    <div id="gameScreen" class="view">
-        <div class="header">
-            <button onclick="exitGame()" class="btn-outline" style="width:auto; padding:8px 15px;">Quit</button>
-            <div id="turnDisplay" style="font-weight:bold; font-size:1.2rem; text-shadow:0 0 10px var(--primary);">TURN: X</div>
-        </div>
-        <div class="game-board">
-            <div class="cell" onclick="move(0)"></div>
-            <div class="cell" onclick="move(1)"></div>
-            <div class="cell" onclick="move(2)"></div>
-            <div class="cell" onclick="move(3)"></div>
-            <div class="cell" onclick="move(4)"></div>
-            <div class="cell" onclick="move(5)"></div>
-            <div class="cell" onclick="move(6)"></div>
-            <div class="cell" onclick="move(7)"></div>
-            <div class="cell" onclick="move(8)"></div>
-        </div>
-    </div>
-</div>
-
 <script>
-    // --- FIREBASE CONFIG (PASTE YOUR KEYS HERE) ---
+    // --- FIREBASE CONFIG (PASTE KEYS HERE) ---
     const firebaseConfig = {
   apiKey: "AIzaSyCCdm76gDYsn5ZXbeZk1nyVnKB9WHynYx0",
   authDomain: "tic-tac-toe-a51b9.firebaseapp.com",
@@ -412,22 +317,24 @@
     const db = firebase.firestore();
     const winAudio = new Audio('win.mp3'); 
 
-    // --- VARIABLES ---
-    let user = null, userData = {}, isSignup = false, captchaRes = 0;
-    let systemIP = "Loading...";
-    let activeGameId = null, myRole = 'X', isBot = false, currentInviteId = null;
-    let board = Array(9).fill(""), gameListener = null, inviteListener = null;
+    let user=null, userData={}, isSignup=false, captchaRes=0, systemIP="Loading...";
+    let activeGameId=null, myRole='X', isBot=false, currentInviteId=null, board=Array(9).fill("");
+    let gameListener=null, inviteListener=null;
+    
+    // OFFLINE VARS
+    let isLocalPvP = false;
+    let isFlipMode = false;
 
-    // --- INIT ---
     async function init() {
-        try {
-            let res = await fetch('https://api.ipify.org?format=json');
-            let d = await res.json();
-            systemIP = d.ip;
-        } catch(e) { systemIP = "Unknown"; }
+        try { let r=await fetch('https://api.ipify.org?format=json'); let d=await r.json(); systemIP=d.ip; } catch(e){}
         const urlParams = new URLSearchParams(window.location.search);
         const inviteCode = urlParams.get('invite');
         if(inviteCode) localStorage.setItem('pendingInvite', inviteCode);
+        window.addEventListener('beforeunload', () => {
+            if(activeGameId && !isBot && !isLocalPvP) {
+                db.collection('games').doc(activeGameId).update({ abandoned: true, winner: 'aborted' });
+            }
+        });
     }
     init();
 
@@ -435,325 +342,291 @@
         if(user && !user.isAnonymous) db.collection('users').doc(user.uid).update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() }).catch(e=>{});
     }, 60000);
 
-    // --- AUTH & VALIDATION ---
-    function toggleAuthMode() {
-        isSignup = !isSignup;
-        document.getElementById('signupFields').style.display = isSignup ? 'block' : 'none';
-        document.getElementById('authBtn').innerText = isSignup ? 'REGISTER' : 'LOGIN';
-        document.getElementById('toggleText').innerText = isSignup ? 'Back to Login' : 'Create Account';
-        if(isSignup) {
-            let a = Math.floor(Math.random()*10), b = Math.floor(Math.random()*10);
-            captchaRes = a + b;
-            document.getElementById('captchaDisplay').innerText = `${a} + ${b}`;
+    // --- 1. START & VIEW LOGIC ---
+    function checkLoginAndStart() { if(user) switchView('dashboardScreen'); else switchView('authScreen'); }
+    function switchView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        setTimeout(() => {
+            document.querySelectorAll('.view').forEach(v => v.style.display='none');
+            const target = document.getElementById(id);
+            target.style.display = 'block';
+            setTimeout(() => target.classList.add('active'), 20);
+        }, 300);
+        document.getElementById('profileDropdown').style.display='none';
+    }
+
+    // --- 2. GAME OVER & QUIT LOGIC ---
+    function showGameOver(who) {
+        winAudio.play().catch(e=>{});
+        const modal = document.getElementById('winnerModal');
+        const em = document.getElementById('goEmoji'); const ti = document.getElementById('goTitle'); const msg = document.getElementById('goMsg'); const pts = document.getElementById('goPoints');
+        modal.style.display = 'flex';
+        pts.innerText = "";
+        
+        if(who === "Draw") {
+            em.innerText = "😐"; ti.innerText = "MATCH DRAW"; ti.style.color = "#ffa500"; msg.innerText = "It was a tie!"; 
+            if(!isBot && !isLocalPvP) pts.innerText = "90💎 Returned";
+            triggerDrawConfetti();
+        } else if (who === "You" || who === "OpponentLeft" || (isLocalPvP && who.includes("Won"))) {
+            em.innerText = "😃"; ti.innerText = (who==="OpponentLeft"?"OPPONENT LEFT!":"VICTORY!"); ti.style.color = "#00ff88";
+            msg.innerText = (who==="OpponentLeft"?"You win by default!":(isLocalPvP ? who : "Victory is yours!")); 
+            if(!isBot && !isLocalPvP) pts.innerText = "Received: 180💎";
+            triggerWinConfetti();
+        } else {
+            em.innerText = "😢"; ti.innerText = "DEFEAT"; ti.style.color = "#ff4444";
+            msg.innerText = "Better luck next time."; 
+            if(!isBot && !isLocalPvP) pts.innerText = "Lost 100💎";
+            triggerSadRain();
         }
     }
 
-    function validateUsername() {
-        const input = document.getElementById('username');
-        const regex = /^[a-z0-9_]+$/;
-        document.getElementById('usernameError').style.display = (!regex.test(input.value)) ? 'block' : 'none';
-        return regex.test(input.value);
+    function exitActiveGame() {
+        if(!confirm("Quit current game?")) return;
+        if(isBot || isLocalPvP) { returnToDash(); } else {
+            db.collection('games').doc(activeGameId).get().then(doc => {
+                const data = doc.data();
+                const players = Object.keys(data.players);
+                const opponentId = players.find(id => id !== user.uid);
+                db.collection('games').doc(activeGameId).update({ winner: opponentId, reason: 'quit' }).then(() => { returnToDash(); });
+            });
+        }
     }
 
-    async function handleAuth() {
-        const email = document.getElementById('email').value;
-        const pass = document.getElementById('password').value;
-        const btn = document.getElementById('authBtn');
-        try {
-            if(isSignup) {
-                if(parseInt(document.getElementById('captchaInput').value) !== captchaRes) return alert("Wrong Captcha");
-                if(!validateUsername()) return alert("Invalid Username");
-                btn.disabled = true; btn.innerText = "Checking...";
-                
-                const uname = document.getElementById('username').value.trim();
-                const snap = await db.collection('users').where('username', '==', uname).get();
-                if(!snap.empty) { btn.disabled = false; btn.innerText = "REGISTER"; return alert("Username taken!"); }
-                
-                const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                await db.collection('users').doc(cred.user.uid).set({
-                    uid: cred.user.uid, name: document.getElementById('fullName').value, username: uname,
-                    email: email, points: 3000, friends: [], friendRequests: [], ip: systemIP, avatar: '👽',
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } else {
-                const cred = await auth.signInWithEmailAndPassword(email, pass);
-                await db.collection('users').doc(cred.user.uid).set({ ip: systemIP, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            }
-        } catch(e) { alert(e.message); btn.disabled = false; btn.innerText = isSignup ? "REGISTER" : "LOGIN"; }
+    // --- 3. CELEBRATION FUNCTIONS ---
+    function triggerWinConfetti() {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors:['#ffd700', '#00f2ff', '#ff00cc'] });
+        const duration = 3000; const end = Date.now() + duration;
+        (function frame() {
+            confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors:['#ffd700', '#00f2ff'] });
+            confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors:['#ffd700', '#ff00cc'] });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        }());
     }
+    function triggerDrawConfetti() { confetti({ particleCount: 80, spread: 100, origin: { y: 0.6 }, colors: ['#ffa500'] }); }
+    function triggerSadRain() {
+        const duration = 4000; const end = Date.now() + duration;
+        (function frame() {
+            confetti({ particleCount: 2, angle: 270, spread: 20, origin: { y: -0.1 }, gravity: 0.8, drift: 0, ticks: 400, colors: ['#555555', '#aaccff', '#0044ff'], shapes: ['circle'], scalar: 0.8 });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        }());
+    }
+
+    // --- 4. OFFLINE 1vs1 MODE ---
+    function openOfflineSetup() { document.getElementById('offlineSetupModal').style.display = 'flex'; }
+    
+    function startOfflineGame(flip) {
+        closeModals();
+        isLocalPvP = true;
+        isBot = false;
+        isFlipMode = flip;
+        board.fill("");
+        myRole = 'X'; // Current turn tracker for local
+        document.querySelectorAll('.cell').forEach(c => { c.innerText=""; c.className="cell"; });
+        document.getElementById('boardContainer').classList.remove('rotated');
+        switchView('gameScreen');
+        document.getElementById('turnDisplay').innerText = "TURN: X";
+    }
+
+    // --- GAME ENGINE ---
+    function startOnlineGame(gameId, role) { 
+        isBot = false; isLocalPvP = false; activeGameId = gameId; myRole = role; board.fill(""); 
+        document.getElementById('boardContainer').classList.remove('rotated');
+        switchView('gameScreen'); 
+        if(gameListener) gameListener(); 
+        gameListener = db.collection('games').doc(gameId).onSnapshot(doc => { 
+            const d = doc.data(); if(!d) return; board = d.board; renderBoard(); 
+            if(d.winner) {
+                if(d.reason === 'quit' && d.winner === user.uid) {
+                    db.collection('users').doc(user.uid).update({points: userData.points + 180});
+                    showGameOver("OpponentLeft");
+                } else handleWin(d.winner);
+            } else { 
+                const t = d.turn===myRole; 
+                document.getElementById('turnDisplay').innerText=t?"YOUR TURN":"OPPONENT"; 
+                document.getElementById('turnDisplay').style.color=t?"#00ff88":"#ccc"; 
+            } 
+        }); 
+    }
+
+    function renderBoard() { document.querySelectorAll('.cell').forEach((c, i) => { c.innerText = board[i]; c.className = "cell " + (board[i] ? board[i].toLowerCase() : ""); }); }
+    
+    async function move(i) {
+        if(board[i] !== "") return;
+        
+        // --- OFFLINE 1v1 ---
+        if(isLocalPvP) {
+            board[i] = myRole;
+            renderBoard();
+            
+            if(checkWinFromArray(board)) { showGameOver(myRole + " Won!"); return; }
+            if(!board.includes("")) { showGameOver("Draw"); return; }
+            
+            myRole = myRole === 'X' ? 'O' : 'X';
+            document.getElementById('turnDisplay').innerText = "TURN: " + myRole;
+            
+            // Handle Flip
+            if(isFlipMode) {
+                const b = document.getElementById('boardContainer');
+                if(b.classList.contains('rotated')) b.classList.remove('rotated'); else b.classList.add('rotated');
+            }
+            return;
+        }
+
+        // --- BOT ---
+        if(isBot) {
+            if(myRole !== 'X') return; board[i] = 'X'; renderBoard(); if(checkLocalWin()) return;
+            myRole = 'O'; document.getElementById('turnDisplay').innerText = "BOT...";
+            setTimeout(() => { let a = board.map((v,k)=>v===""?k:null).filter(v=>v!==null); if(a.length) { board[a[Math.floor(Math.random()*a.length)]] = 'O'; renderBoard(); checkLocalWin(); } myRole = 'X'; document.getElementById('turnDisplay').innerText = "YOUR TURN"; }, 600);
+        } else {
+            // --- ONLINE ---
+            const d = await db.collection('games').doc(activeGameId).get(); 
+            if(d.data().winner) return;
+            if(d.data().turn !== myRole) return alert("Wait turn");
+            let nb = [...d.data().board]; nb[i] = myRole; let nt = myRole==='X'?'O':'X'; let w = checkWinFromArray(nb)?myRole:null; if(!w && !nb.includes("")) w="draw";
+            await db.collection('games').doc(activeGameId).update({ board: nb, turn: nt, winner: w });
+        }
+    }
+
+    function checkLocalWin() { if(checkWinFromArray(board)) { showGameOver(myRole==='X'?'You':'Bot'); if(myRole==='X') db.collection('users').doc(user.uid).update({points:userData.points+50}); return true; } if(!board.includes("")) { showGameOver("Draw"); return true; } return false; }
+    async function handleWin(w) { if(w==='draw') { showGameOver("Draw"); await db.collection('users').doc(user.uid).update({points:userData.points+90}); } else if(w===myRole) { showGameOver("You"); await db.collection('users').doc(user.uid).update({points:userData.points+180}); } else { showGameOver("Opponent"); } }
+    function checkWinFromArray(b) { const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; return w.some(arr => b[arr[0]] && b[arr[0]]===b[arr[1]] && b[arr[1]]===b[arr[2]]); }
+    function playBot() { isBot = true; isLocalPvP = false; myRole = 'X'; board.fill(""); document.querySelectorAll('.cell').forEach(c => { c.innerText=""; c.className="cell"; }); document.getElementById('boardContainer').classList.remove('rotated'); switchView('gameScreen'); document.getElementById('turnDisplay').innerText = "VS BOT"; }
+    function returnToDash() { if(gameListener) gameListener(); switchView('dashboardScreen'); }
+
+    // --- UTILS ---
+    function handleAuth() {
+        const email = document.getElementById('email').value; const pass = document.getElementById('password').value;
+        if(isSignup) {
+            if(parseInt(document.getElementById('captchaInput').value) !== captchaRes) return alert("Wrong Captcha");
+            if(!validateUsername()) return alert("Invalid Username");
+            const uname = document.getElementById('username').value.trim();
+            db.collection('users').where('username', '==', uname).get().then(snap => {
+                if(!snap.empty) return alert("Username taken");
+                auth.createUserWithEmailAndPassword(email, pass).then(cred => {
+                    db.collection('users').doc(cred.user.uid).set({
+                        uid: cred.user.uid, name: document.getElementById('fullName').value, username: uname,
+                        email: email, points: 3000, friends: [], friendRequests: [], ip: systemIP, avatar: '👽', lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+            });
+        } else {
+            auth.signInWithEmailAndPassword(email, pass).then(() => { if(auth.currentUser) db.collection('users').doc(auth.currentUser.uid).set({ ip: systemIP, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); });
+        }
+    }
+    
+    function toggleAuthMode() { isSignup = !isSignup; document.getElementById('signupFields').style.display = isSignup ? 'block' : 'none'; document.getElementById('authBtn').innerText = isSignup ? 'REGISTER' : 'LOGIN'; if(isSignup) { let a = Math.floor(Math.random()*10), b = Math.floor(Math.random()*10); captchaRes = a + b; document.getElementById('captchaDisplay').innerText = `${a} + ${b}`; } }
+    function validateUsername() { const v = document.getElementById('username').value; return /^[a-z0-9_]+$/.test(v); }
     function playAsGuest() { auth.signInAnonymously(); }
     function logout() { auth.signOut(); location.reload(); }
-
-    // --- EDIT PROFILE ---
-    function openEditProfile() {
-        document.getElementById('editProfileModal').style.display = 'flex';
-        document.getElementById('profileDropdown').style.display = 'none';
-        document.getElementById('editFullName').value = userData.name || "";
-        document.getElementById('editUsername').value = userData.username || "";
-        selectAvatar(userData.avatar || '👽');
-    }
-
-    let tempAvatar = '👽';
-    function selectAvatar(av) {
-        tempAvatar = av;
-        document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-        // Simple iteration to find clicked element - in prod use better ref
-        event.target.classList.add('selected');
-        document.getElementById('selectedAvatar').value = av;
-    }
-
-    function validateEditUsername() {
-        const val = document.getElementById('editUsername').value;
-        const regex = /^[a-z0-9_]+$/;
-        document.getElementById('editUserError').style.display = regex.test(val) ? 'none' : 'block';
-    }
-
-    async function saveProfile() {
-        const newName = document.getElementById('editFullName').value;
-        const newUser = document.getElementById('editUsername').value.trim();
-        const newAv = tempAvatar;
-        
-        const regex = /^[a-z0-9_]+$/;
-        if(!regex.test(newUser)) return alert("Invalid Username Format");
-
-        // Check uniqueness only if changed
-        if(newUser !== userData.username) {
-            const snap = await db.collection('users').where('username', '==', newUser).get();
-            if(!snap.empty) return alert("Username already taken by someone else.");
-        }
-
-        await db.collection('users').doc(user.uid).update({
-            name: newName,
-            username: newUser,
-            avatar: newAv
-        });
-        alert("Profile Updated!");
-        closeModals();
-    }
-
-    // --- STATE LISTENER ---
-    auth.onAuthStateChanged(async (u) => {
-        if(u) {
-            user = u;
-            if(!u.isAnonymous) {
-                db.collection('users').doc(u.uid).onSnapshot(doc => { if(doc.exists) { userData = doc.data(); updateUI(); checkPendingInvite(); } });
-                listenForInvites();
-            } else { userData = {username:"Guest", points:0, friends:[], avatar:'👽'}; updateUI(); }
-            switchView('dashboardScreen');
-        } else { switchView('authScreen'); }
+    
+    // Auth Listener & Main Update
+    auth.onAuthStateChanged(async (u) => { 
+        if(u) { 
+            user = u; 
+            if(!u.isAnonymous) { 
+                db.collection('users').doc(u.uid).onSnapshot(doc => { 
+                    if(doc.exists) { 
+                        userData = doc.data(); 
+                        updateUI(); 
+                        checkPendingInvite();
+                        // Real-time update for friends modal if open
+                        if(document.getElementById('friendsModal').style.display === 'flex') openFriendModal();
+                    } 
+                }); 
+                listenForInvites(); 
+            } else { 
+                userData = {username:"Guest", points:0, friends:[], avatar:'👽'}; 
+                updateUI(); 
+            } 
+            if(document.getElementById('authScreen').classList.contains('active')) switchView('dashboardScreen'); 
+        } else { 
+            if(!document.getElementById('splashScreen').classList.contains('active')) switchView('authScreen'); 
+        } 
     });
 
-    function updateUI() {
-        document.getElementById('displayPoints').innerText = userData.points || 0;
-        document.getElementById('menuName').innerText = userData.name || userData.username || "Guest";
-        document.getElementById('menuUsername').innerText = "@" + (userData.username || "guest");
-        document.getElementById('profileInit').innerText = userData.avatar || '👽';
-        document.getElementById('menuAvatar').innerText = userData.avatar || '👽';
-
-        const reqs = userData.friendRequests || [];
-        document.getElementById('notifDot').style.display = reqs.length > 0 ? 'block' : 'none';
+    function updateUI() { document.getElementById('displayPoints').innerText = userData.points || 0; document.getElementById('menuName').innerText = userData.name || userData.username || "Guest"; document.getElementById('menuUsername').innerText = "@" + (userData.username||"guest"); document.getElementById('profileInit').innerText = userData.avatar || '👽'; document.getElementById('menuAvatar').innerText = userData.avatar || '👽'; const reqs = userData.friendRequests || []; document.getElementById('notifDot').style.display = reqs.length > 0 ? 'block' : 'none'; const reqList = document.getElementById('requestList'); if(reqs.length > 0) { document.getElementById('requestArea').style.display = 'block'; reqList.innerHTML = ''; reqs.forEach(r => { reqList.innerHTML += `<div class="list-item"><span><b>${r.username}</b></span><div><button class="btn-small btn-success" onclick="acceptFriend('${r.uid}','${r.username}')">✓</button> <button class="btn-small btn-danger" onclick="declineFriend('${r.uid}')">X</button></div></div>`; }); } else { document.getElementById('requestArea').style.display = 'none'; } }
+    function listenForInvites() { if(inviteListener) inviteListener(); inviteListener = db.collection('invites').where('to','==',user.uid).where('status','==','pending').onSnapshot(s=>{ if(!s.empty) { currentInviteId=s.docs[0].id; document.getElementById('challengeMsg').innerText=s.docs[0].data().fromName+" invites you"; document.getElementById('challengeModal').style.display='flex'; } else document.getElementById('challengeModal').style.display='none'; }); }
+    async function sendChallenge(uid, name) { if(userData.points<100) return alert("Need 100"); document.getElementById('waitingModal').style.display='flex'; document.getElementById('friendSelector').style.display='none'; const ref = await db.collection('invites').add({from:user.uid, fromName:userData.username, to:uid, toName:name, status:'pending', timestamp:firebase.firestore.FieldValue.serverTimestamp()}); currentInviteId=ref.id; db.collection('invites').doc(ref.id).onSnapshot(s=>{ if(s.data()?.status==='accepted') { document.getElementById('waitingModal').style.display='none'; db.collection('users').doc(user.uid).update({points:userData.points-100}); startOnlineGame(s.data().gameId, 'X'); } }); }
+    function cancelInvite() { db.collection('invites').doc(currentInviteId).delete(); document.getElementById('waitingModal').style.display='none'; }
+    async function acceptChallenge() { if(userData.points<100) return alert("Need 100"); await db.collection('users').doc(user.uid).update({points:userData.points-100}); const i=await db.collection('invites').doc(currentInviteId).get(); const g=await db.collection('games').add({board:Array(9).fill(""), turn:'X', winner:null, players:{[user.uid]:'O', [i.data().from]:'X'}, playerList:[user.uid, i.data().from], playerDetails:{[user.uid]:{name:userData.username}, [i.data().from]:{name:i.data().fromName}}, timestamp:firebase.firestore.FieldValue.serverTimestamp()}); await db.collection('invites').doc(currentInviteId).update({status:'accepted', gameId:g.id}); document.getElementById('challengeModal').style.display='none'; startOnlineGame(g.id, 'O'); }
+    function rejectChallenge() { db.collection('invites').doc(currentInviteId).update({status:'rejected'}); document.getElementById('challengeModal').style.display='none'; }
+    function openEditProfile() { document.getElementById('editProfileModal').style.display='flex'; document.getElementById('profileDropdown').style.display='none'; document.getElementById('editFullName').value = userData.name||""; document.getElementById('editUsername').value = userData.username||""; }
+    function selectAvatar(a) { document.getElementById('selectedAvatar').value = a; }
+    async function saveProfile() { const u = document.getElementById('editUsername').value.trim(); const av = document.getElementById('selectedAvatar').value || '👽'; if(u !== userData.username) { const s = await db.collection('users').where('username','==',u).get(); if(!s.empty) return alert("Taken"); } await db.collection('users').doc(user.uid).update({ name: document.getElementById('editFullName').value, username: u, avatar: av }); alert("Saved"); closeModals(); }
+    function openMatchHistory() { if(user.isAnonymous) return alert("Login required"); document.getElementById('historyModal').style.display = 'flex'; document.getElementById('profileDropdown').style.display = 'none'; const container = document.getElementById('historyListContainer'); container.innerHTML = "Loading..."; db.collection('games').where('playerList', 'array-contains', user.uid).orderBy('timestamp', 'desc').limit(20).get().then(snap => { if(snap.empty) { container.innerHTML = "<p style='color:#aaa'>No history.</p>"; return; } container.innerHTML = ""; snap.forEach(doc => { const g = doc.data(); let oppName = "Unknown"; for(let uid in g.playerDetails) { if(uid !== user.uid) oppName = g.playerDetails[uid].name; } const myR = g.players[user.uid]; let resText="LOST", color="red"; if(g.winner === 'draw') { resText="DRAW"; color="orange"; } else if(g.winner === myR) { resText="WON"; color="var(--success)"; } const d = g.timestamp ? new Date(g.timestamp.toDate()).toLocaleDateString() : "-"; container.innerHTML += `<div class="list-item"><div><b>vs ${oppName}</b><br><small style="color:#aaa">${d}</small></div><b style="color:${color}">${resText}</b></div>`; }); }).catch(e => container.innerHTML="Error loading."); }
+    function openFriendModal() { 
+        document.getElementById('friendsModal').style.display='flex'; 
+        document.getElementById('profileDropdown').style.display='none'; 
         
-        const reqList = document.getElementById('requestList');
-        if(reqs.length > 0) {
-            document.getElementById('requestArea').style.display = 'block';
+        // 1. Pending Requests in Modal
+        const reqList = document.getElementById('modalRequestList');
+        const reqs = userData.friendRequests || [];
+        if(reqs.length === 0) {
+            reqList.innerHTML = '<small style="color:#aaa">No pending requests</small>';
+        } else {
             reqList.innerHTML = '';
             reqs.forEach(r => {
                 reqList.innerHTML += `
                 <div class="list-item">
-                    <span><b>${r.username}</b> wants to connect</span>
+                    <span>${r.username}</span>
                     <div style="display:flex; gap:5px;">
                         <button class="btn-small btn-success" onclick="acceptFriend('${r.uid}','${r.username}')">✓</button>
-                        <button class="btn-small btn-danger" onclick="declineFriend('${r.uid}')">X</button>
+                        <button class="btn-small btn-danger" onclick="declineFriend('${r.uid}', '${r.username}')">X</button>
                     </div>
                 </div>`;
             });
-        } else { document.getElementById('requestArea').style.display = 'none'; }
-    }
-
-    // --- ACCOUNT UTILS ---
-    function openForgotPassword() { document.getElementById('forgotPasswordModal').style.display = 'flex'; }
-    async function sendResetLink() {
-        const email = document.getElementById('resetEmailInput').value;
-        if(!email) return alert("Please enter email");
-        try { await auth.sendPasswordResetEmail(email); alert("Link sent!"); closeModals(); } catch(e) { alert(e.message); }
-    }
-    function openDeleteAccount() { document.getElementById('deleteAccountModal').style.display = 'flex'; document.getElementById('profileDropdown').style.display = 'none'; }
-    async function confirmDeleteAccount() {
-        if(!user) return;
-        try { await db.collection('users').doc(user.uid).delete(); await user.delete(); alert("Account deleted."); location.reload(); } catch(e) { alert(e.message); }
-    }
-
-    // --- GAME INVITE SYSTEM ---
-    function listenForInvites() {
-        if(inviteListener) inviteListener();
-        inviteListener = db.collection('invites').where('to', '==', user.uid).where('status', '==', 'pending')
-        .onSnapshot(snap => {
-            if(!snap.empty) {
-                const invite = snap.docs[0].data();
-                invite.id = snap.docs[0].id;
-                currentInviteId = invite.id;
-                document.getElementById('challengeMsg').innerText = `@${invite.fromName} challenges you!`;
-                document.getElementById('challengeModal').style.display = 'flex';
-            } else { document.getElementById('challengeModal').style.display = 'none'; }
-        });
-    }
-    
-    // ... (Match Making logic same as previous, just updated UI classes) ...
-    // Copying core logic for brevity, assuming established flow:
-    
-    async function sendChallenge(friendUid, friendName) {
-        if(userData.points < 100) return alert("Need 100 Points!");
-        document.getElementById('waitingModal').style.display = 'flex';
-        document.getElementById('friendSelector').style.display = 'none';
-        const docRef = await db.collection('invites').add({
-            from: user.uid, fromName: userData.username, to: friendUid, toName: friendName, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        currentInviteId = docRef.id;
-        const unsub = db.collection('invites').doc(currentInviteId).onSnapshot(async (doc) => {
-            const data = doc.data();
-            if(data && data.status === 'accepted') {
-                unsub(); document.getElementById('waitingModal').style.display = 'none';
-                await db.collection('users').doc(user.uid).update({ points: userData.points - 100 });
-                startOnlineGame(data.gameId, 'X');
-            } else if (!doc.exists || data.status === 'rejected') {
-                unsub(); document.getElementById('waitingModal').style.display = 'none'; alert("Cancelled/Rejected");
-            }
-        });
-    }
-    function cancelInvite() { if(currentInviteId) db.collection('invites').doc(currentInviteId).delete(); document.getElementById('waitingModal').style.display='none'; }
-    async function acceptChallenge() {
-        if(userData.points < 100) return alert("Need 100 Points!");
-        await db.collection('users').doc(user.uid).update({ points: userData.points - 100 });
-        const inv = await db.collection('invites').doc(currentInviteId).get();
-        const invData = inv.data();
-        const gameRef = await db.collection('games').add({
-            board: Array(9).fill(""), turn: 'X', winner: null, players: { [user.uid]: 'O', [invData.from]: 'X' },
-            playerList: [user.uid, invData.from], playerDetails: { [user.uid]:{name:userData.username}, [invData.from]:{name:invData.fromName} },
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        await db.collection('invites').doc(currentInviteId).update({ status: 'accepted', gameId: gameRef.id });
-        document.getElementById('challengeModal').style.display = 'none';
-        startOnlineGame(gameRef.id, 'O');
-    }
-    function rejectChallenge() { if(currentInviteId) db.collection('invites').doc(currentInviteId).update({ status: 'rejected' }); document.getElementById('challengeModal').style.display='none'; }
-
-    // --- GAME ENGINE ---
-    function playBot() { isBot = true; myRole = 'X'; board.fill(""); document.querySelectorAll('.cell').forEach(c => { c.innerText=""; c.className="cell"; }); switchView('gameScreen'); document.getElementById('turnDisplay').innerText = "VS BOT"; }
-    function startOnlineGame(gameId, role) {
-        isBot = false; activeGameId = gameId; myRole = role; board.fill(""); switchView('gameScreen');
-        if(gameListener) gameListener();
-        gameListener = db.collection('games').doc(gameId).onSnapshot(doc => {
-            const data = doc.data(); if(!data) return;
-            board = data.board; renderBoard();
-            if(data.winner) handleWin(data.winner);
-            else {
-                const isMyTurn = data.turn === myRole;
-                document.getElementById('turnDisplay').innerText = isMyTurn ? "YOUR TURN" : "OPPONENT'S TURN";
-                document.getElementById('turnDisplay').style.color = isMyTurn ? "var(--primary)" : "#ccc";
-            }
-        });
-    }
-    function renderBoard() { document.querySelectorAll('.cell').forEach((c, i) => { c.innerText = board[i]; c.className = "cell " + (board[i] ? board[i].toLowerCase() : ""); }); }
-    async function move(i) {
-        if(board[i] !== "") return;
-        if(isBot) {
-            if(myRole !== 'X') return; board[i] = 'X'; renderBoard(); if(checkLocalWin()) return;
-            myRole = 'O'; document.getElementById('turnDisplay').innerText = "BOT THINKING...";
-            setTimeout(() => {
-                let avail = board.map((v,k)=>v===""?k:null).filter(v=>v!==null);
-                if(avail.length) { board[avail[Math.floor(Math.random()*avail.length)]] = 'O'; renderBoard(); checkLocalWin(); }
-                myRole = 'X'; document.getElementById('turnDisplay').innerText = "YOUR TURN";
-            }, 600);
-        } else {
-            const doc = await db.collection('games').doc(activeGameId).get();
-            const data = doc.data(); if(data.turn !== myRole) return alert("Not your turn!");
-            let newBoard = [...data.board]; newBoard[i] = myRole;
-            let nextTurn = myRole === 'X' ? 'O' : 'X';
-            let winner = checkWinFromArray(newBoard) ? myRole : null;
-            if(!winner && !newBoard.includes("")) winner = "draw";
-            await db.collection('games').doc(activeGameId).update({ board: newBoard, turn: nextTurn, winner: winner });
         }
+
+        // 2. Friends List
+        const friendList = document.getElementById('modalFriendList');
+        let html=''; 
+        (userData.friends||[]).forEach(f=>{
+            html+=`<div class="list-item"><span>${f.username}</span> <button class="btn-small btn-danger" onclick="removeFriend('${f.uid}')">Remove</button></div>`
+        }); 
+        friendList.innerHTML=html||"<small style='color:#aaa'>No friends added.</small>"; 
     }
     
-    // --- WIN/LOSS/HISTORY ---
-    function checkLocalWin() {
-        if(checkWinFromArray(board)) { showGameOver(myRole === 'X' ? 'You' : 'Bot'); if(myRole==='X') db.collection('users').doc(user.uid).update({points:userData.points+50}); return true; }
-        if(!board.includes("")) { alert("Draw!"); returnToDash(); return true; }
-        return false;
-    }
-    async function handleWin(winnerRole) {
-        const isMe = winnerRole === myRole; const isDraw = winnerRole === 'draw';
-        if(isDraw) { showGameOver("Draw"); await db.collection('users').doc(user.uid).update({ points: userData.points + 90 }); }
-        else if(isMe) { showGameOver("You"); await db.collection('users').doc(user.uid).update({ points: userData.points + 180 }); }
-        else { showGameOver("Opponent"); }
-    }
-    function checkWinFromArray(b) { const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; return w.some(arr => b[arr[0]] && b[arr[0]]===b[arr[1]] && b[arr[1]]===b[arr[2]]); }
-    function showGameOver(who) {
-        winAudio.play().catch(e=>{});
-        document.getElementById('winnerModal').style.display='flex';
-        const em = document.getElementById('goEmoji'); const ti = document.getElementById('goTitle'); const pts = document.getElementById('goPoints');
-        if(who==="Draw") { em.innerText="😐"; ti.innerText="DRAW!"; pts.innerText="Returned: 90💎"; }
-        else if(who==="You") { confetti({particleCount:150}); em.innerText="🏆"; ti.innerText="VICTORY!"; pts.innerText="Won: 180💎"; ti.style.color="var(--success)"; }
-        else { em.innerText="💀"; ti.innerText="DEFEAT"; pts.innerText="Lost: 100💎"; ti.style.color="var(--danger)"; }
-    }
-    function exitGame() { if(confirm("Quit?")) returnToDash(); }
-    function returnToDash() { if(gameListener) gameListener(); switchView('dashboardScreen'); }
-
-    // --- HISTORY UI ---
-    async function openMatchHistory() {
-        if(user.isAnonymous) return alert("Login required");
-        document.getElementById('historyModal').style.display = 'flex';
-        document.getElementById('profileDropdown').style.display = 'none';
-        const container = document.getElementById('historyListContainer');
-        container.innerHTML = "Loading...";
-        try {
-            const snap = await db.collection('games').where('playerList', 'array-contains', user.uid).orderBy('timestamp', 'desc').limit(20).get();
-            if(snap.empty) { container.innerHTML = "<p style='color:#aaa'>No history.</p>"; return; }
-            container.innerHTML = "";
-            snap.forEach(doc => {
-                const g = doc.data();
-                let oppName = "Unknown";
-                for(let uid in g.playerDetails) { if(uid !== user.uid) oppName = g.playerDetails[uid].name; }
-                const myR = g.players[user.uid];
-                let resText="LOST", color="red";
-                if(g.winner === 'draw') { resText="DRAW"; color="orange"; }
-                else if(g.winner === myR) { resText="WON"; color="var(--success)"; }
-                const d = g.timestamp ? new Date(g.timestamp.toDate()).toLocaleDateString() : "-";
-                container.innerHTML += `<div class="list-item"><div><b>vs ${oppName}</b><br><small style="color:#aaa">${d}</small></div><b style="color:${color}">${resText}</b></div>`;
-            });
-        } catch(e) { container.innerHTML = "Error loading history."; }
-    }
-
-    // --- FRIENDS & UI HELPERS ---
-    function openGameSelector() {
-        const div = document.getElementById('onlineFriendsList'); div.innerHTML = '';
-        if(!userData.friends || userData.friends.length===0) return alert("Add friends first!");
-        document.getElementById('friendSelector').style.display = 'block';
-        userData.friends.forEach(async f => {
-            let status = '⚪'; try { const fd = await db.collection('users').doc(f.uid).get(); if(Date.now() - fd.data().lastSeen?.toDate().getTime() < 120000) status = '🟢'; } catch(e){}
-            div.innerHTML += `<div class="list-item"><span>${status} ${f.username}</span><button class="btn-small btn-game" style="margin:0; width:auto; padding:5px 15px;" onclick="sendChallenge('${f.uid}', '${f.username}')">PLAY</button></div>`;
-        });
-    }
-
-    function openFriendModal() {
-        document.getElementById('friendsModal').style.display='flex'; document.getElementById('profileDropdown').style.display='none';
-        let html = '';
-        (userData.friends||[]).forEach(f => { html += `<div class="list-item"><span>${f.username}</span> <button class="btn-small btn-danger" onclick="removeFriend('${f.uid}')">Remove</button></div>`; });
-        document.getElementById('modalFriendList').innerHTML = html || "No friends";
-    }
-    
-    // Core Friend Logic (Same as before)
+    async function removeFriend(uid){ if(confirm("Remove?")) { const nf=userData.friends.filter(f=>f.uid!==uid); await db.collection('users').doc(user.uid).update({friends:nf}); openFriendModal(); }}
     async function acceptFriend(uid, name) { await db.collection('users').doc(user.uid).update({ friends: firebase.firestore.FieldValue.arrayUnion({uid, username:name}), friendRequests: firebase.firestore.FieldValue.arrayRemove({uid, username:name}) }); await db.collection('users').doc(uid).update({ friends: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) }); }
-    async function removeFriend(uid) { if(confirm("Remove?")) { const newF = userData.friends.filter(f => f.uid !== uid); await db.collection('users').doc(user.uid).update({ friends: newF }); openFriendModal(); } }
-    async function declineFriend(uid) { const newReqs = userData.friendRequests.filter(r => r.uid !== uid); await db.collection('users').doc(user.uid).update({ friendRequests: newReqs }); }
-    function toggleProfile() { const m = document.getElementById('profileDropdown'); m.style.display = m.style.display==='block'?'none':'block'; }
-    function switchView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).style.display='block'; setTimeout(()=>document.getElementById(id).classList.add('active'),10); document.getElementById('profileDropdown').style.display='none'; }
-    function closeModals() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
+    async function declineFriend(uid, name) { await db.collection('users').doc(user.uid).update({ friendRequests: firebase.firestore.FieldValue.arrayRemove({uid, username:name}) }); }
     function openAddFriend() { document.getElementById('addFriendModal').style.display='flex'; document.getElementById('profileDropdown').style.display='none'; switchTab('link'); document.getElementById('shareLinkInput').value = window.location.origin + window.location.pathname + "?invite=" + user.uid; }
-    function switchTab(t) { document.getElementById('tabLink').style.display=t==='link'?'block':'none'; document.getElementById('tabUser').style.display=t==='user'?'block':'none'; document.getElementById('btnTabLink').className = t==='link'?'btn-game':'btn-outline'; document.getElementById('btnTabUser').className = t==='user'?'btn-game':'btn-outline'; }
+    function switchTab(t) { document.getElementById('tabLink').style.display=t==='link'?'block':'none'; document.getElementById('tabUser').style.display=t==='user'?'block':'none'; }
     function copyLink() { document.getElementById('shareLinkInput').select(); document.execCommand("copy"); alert("Copied"); }
     async function searchAndAdd() { const u = document.getElementById('searchUserInput').value.trim(); const s = await db.collection('users').where('username','==',u).get(); if(s.empty) return alert("Not found"); const fid = s.docs[0].id; if(fid===user.uid) return alert("Self error"); await db.collection('users').doc(fid).update({ friendRequests: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) }); alert("Sent!"); }
     async function checkPendingInvite() { const i = localStorage.getItem('pendingInvite'); if(i && i!==user.uid && !userData.friends.find(f=>f.uid===i)) { const d = await db.collection('users').doc(i).get(); if(d.exists) { const f = d.data(); await db.collection('users').doc(user.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:f.uid, username:f.username})}); await db.collection('users').doc(f.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username})}); alert("Friend added!"); } localStorage.removeItem('pendingInvite'); } }
+    function toggleProfile() { const m=document.getElementById('profileDropdown'); m.style.display=m.style.display==='block'?'none':'block'; }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
+    function openForgotPassword() { document.getElementById('forgotPasswordModal').style.display = 'flex'; }
+    async function sendResetLink() { const email = document.getElementById('resetEmailInput').value; if(!email) return alert("Enter email"); try { await auth.sendPasswordResetEmail(email); alert("Sent!"); closeModals(); } catch(e) { alert(e.message); } }
+    function openDeleteAccount() { document.getElementById('deleteAccountModal').style.display = 'flex'; document.getElementById('profileDropdown').style.display = 'none'; }
+    async function confirmDeleteAccount() { if(!user) return; try { await db.collection('users').doc(user.uid).delete(); await user.delete(); alert("Deleted"); location.reload(); } catch(e) { alert(e.message); } }
+    function validateEditUsername() { const v = document.getElementById('editUsername').value; document.getElementById('editUserError').style.display = /^[a-z0-9_]+$/.test(v) ? 'none' : 'block'; }
+    
+    function openGameSelector() {
+        const div = document.getElementById('onlineFriendsList'); div.innerHTML = 'Refreshing list...';
+        if(!userData.friends || userData.friends.length===0) return alert("Add friends first!");
+        document.getElementById('friendSelector').style.display = 'block';
+        setTimeout(() => {
+            div.innerHTML = '';
+            userData.friends.forEach(async f => {
+                let statusClass = '';
+                try { 
+                    const fd = await db.collection('users').doc(f.uid).get(); 
+                    if(fd.exists && fd.data().lastSeen && (Date.now() - fd.data().lastSeen.toDate().getTime() < 120000)) {
+                        statusClass = 'is-online';
+                    }
+                } catch(e){}
+                div.innerHTML += `
+                <div class="list-item">
+                    <div style="display:flex; align-items:center;">
+                        <span class="online-dot ${statusClass}"></span>
+                        <span>${f.username}</span>
+                    </div>
+                    <button class="btn-small btn-game" style="margin:0; width:auto; padding:5px 15px;" onclick="sendChallenge('${f.uid}', '${f.username}')">PLAY</button>
+                </div>`;
+            });
+        }, 500);
+    }
 </script>
 </body>
 </html>
