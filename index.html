@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Ultimate: History Edition</title>
+    <title>Tic-Tac-Toe Ultimate: Fair Play</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -61,6 +61,10 @@
 
         .validation-msg { color: var(--danger); font-size: 0.8rem; display: none; text-align: left; }
 
+        /* --- Animations --- */
+        @keyframes blink { 50% { opacity: 0.4; transform: scale(0.9); } }
+        .blink-emoji { animation: blink 1s infinite; display: inline-block; }
+
         /* --- Header & Profile --- */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; }
         .profile-icon { cursor: pointer; background: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; position: relative; }
@@ -114,10 +118,8 @@
 <div id="historyModal" class="modal">
     <div class="modal-box">
         <h3>📜 Match History</h3>
-        <p style="font-size:0.8rem; color:#aaa; margin-top:-10px; margin-bottom:15px;">(Friends Only - Bots not included)</p>
-        <div id="historyListContainer" style="max-height: 300px; overflow-y:auto;">
-            Loading...
-        </div>
+        <p style="font-size:0.8rem; color:#aaa; margin-top:-10px; margin-bottom:15px;">(Friends Only)</p>
+        <div id="historyListContainer" style="max-height: 300px; overflow-y:auto;">Loading...</div>
         <button onclick="closeModals()" class="btn-outline" style="margin-top:15px;">Close</button>
     </div>
 </div>
@@ -135,7 +137,7 @@
 <div id="deleteAccountModal" class="modal">
     <div class="modal-box" style="border: 2px solid red;">
         <h3 style="color:var(--danger)">⚠️ Delete Account?</h3>
-        <p>Are you sure you want to delete your account? This action cannot be undone and you will lose all points.</p>
+        <p>Are you sure? This action cannot be undone.</p>
         <button onclick="confirmDeleteAccount()" class="btn-danger">Yes, Delete Everything</button>
         <button onclick="closeModals()" class="btn-outline">Cancel</button>
     </div>
@@ -145,7 +147,7 @@
     <div class="modal-box" style="border: 2px solid var(--primary); box-shadow: 0 0 20px var(--primary);">
         <h2 style="margin-top:0;">⚔️ Game Request!</h2>
         <p id="challengeMsg">Player wants to play.</p>
-        <p style="font-size:0.8rem; color: #ffd700;">Cost: 100💎</p>
+        <p style="font-size:0.8rem; color: #ffd700;">Entry Fee: 100💎</p>
         <div style="display:flex; gap:10px; justify-content:center;">
             <button onclick="acceptChallenge()" class="btn-success">Accept & Play</button>
             <button onclick="rejectChallenge()" class="btn-danger">Reject</button>
@@ -157,16 +159,17 @@
     <div class="modal-box">
         <h3>Waiting for Opponent...</h3>
         <div class="loader" style="margin: 20px 0; font-size:2rem;">⏳</div>
-        <p>Points will only be deducted if they accept.</p>
+        <p>100 Points deducted only if they accept.</p>
         <button onclick="cancelInvite()" class="btn-danger">Cancel Request</button>
     </div>
 </div>
 
-<div id="winnerModal" class="modal">
+<div id="gameOverModal" class="modal">
     <div class="modal-box">
-        <h1 style="font-size: 4rem; margin: 0;">🏆</h1>
-        <h2 id="winnerText" style="color: var(--success);">You Won!</h2>
-        <p id="winnerMsg">Congratulation User!</p>
+        <h1 id="goEmoji" class="blink-emoji" style="font-size: 5rem; margin: 0;"></h1>
+        <h2 id="goTitle" style="margin: 10px 0;"></h2>
+        <p id="goMsg" style="font-size: 1.1rem;"></p>
+        <p id="goPoints" style="font-size:0.9rem; color:#ffd700; margin-bottom:20px;"></p>
         <button onclick="closeModals(); returnToDash();">Back to Menu</button>
     </div>
 </div>
@@ -205,7 +208,6 @@
         <div id="loginForm">
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
-            
             <div id="signupFields" style="display:none;">
                 <input type="text" id="fullName" placeholder="Full Name">
                 <input type="text" id="username" placeholder="username (a-z, 0-9, _ only)" oninput="validateUsername()">
@@ -215,13 +217,8 @@
                     <input type="number" id="captchaInput" placeholder="=" style="width:60px;">
                 </div>
             </div>
-
             <button onclick="handleAuth()" id="authBtn">Login</button>
-            
-            <p style="text-align:center; font-size:0.9rem;">
-                <a href="#" onclick="openForgotPassword()" style="color:#aaa;">Forgot Password?</a>
-            </p>
-
+            <p style="text-align:center; font-size:0.9rem;"><a href="#" onclick="openForgotPassword()" style="color:#aaa;">Forgot Password?</a></p>
             <p style="text-align:center; font-size:0.9rem; cursor:pointer; color:var(--primary)" onclick="toggleAuthMode()">Create Account</p>
             <button class="btn-outline" onclick="playAsGuest()">Play as Guest</button>
         </div>
@@ -317,7 +314,6 @@
     }
     init();
 
-    // Heartbeat
     setInterval(() => {
         if(user && !user.isAnonymous) db.collection('users').doc(user.uid).update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() }).catch(e=>{});
     }, 60000);
@@ -366,98 +362,46 @@
     function playAsGuest() { auth.signInAnonymously(); }
     function logout() { auth.signOut(); location.reload(); }
 
-    // --- FORGOT PASSWORD ---
+    // --- ACCOUNT ACTIONS ---
     function openForgotPassword() { document.getElementById('forgotPasswordModal').style.display = 'flex'; }
     async function sendResetLink() {
         const email = document.getElementById('resetEmailInput').value;
         if(!email) return alert("Please enter email");
-        try {
-            await auth.sendPasswordResetEmail(email);
-            alert("Reset link sent! Check your email.");
-            closeModals();
-        } catch(e) { alert(e.message); }
+        try { await auth.sendPasswordResetEmail(email); alert("Link sent!"); closeModals(); } catch(e) { alert(e.message); }
     }
 
-    // --- DELETE ACCOUNT ---
     function openDeleteAccount() { document.getElementById('deleteAccountModal').style.display = 'flex'; document.getElementById('profileDropdown').style.display = 'none'; }
     async function confirmDeleteAccount() {
         if(!user) return;
-        try {
-            const uid = user.uid;
-            await db.collection('users').doc(uid).delete();
-            await user.delete();
-            alert("Your account has been deleted successfully."); location.reload();
-        } catch(e) { alert("Error deleting: " + e.message + " (You may need to re-login first)"); }
+        try { await db.collection('users').doc(user.uid).delete(); await user.delete(); alert("Account deleted."); location.reload(); } catch(e) { alert(e.message); }
     }
 
-    // --- MATCH HISTORY ---
+    // --- HISTORY ---
     async function openMatchHistory() {
-        if(user.isAnonymous) return alert("Please login to see history.");
+        if(user.isAnonymous) return alert("Login required");
         document.getElementById('historyModal').style.display = 'flex';
         document.getElementById('profileDropdown').style.display = 'none';
         const container = document.getElementById('historyListContainer');
-        container.innerHTML = "Loading matches...";
-
+        container.innerHTML = "Loading...";
         try {
-            // Query games where 'playerList' contains user ID. Order by time.
-            // Note: Requires simple indexing or manual sort if composite
-            const snap = await db.collection('games')
-                .where('playerList', 'array-contains', user.uid)
-                .orderBy('timestamp', 'desc')
-                .limit(20)
-                .get();
-
-            if(snap.empty) {
-                container.innerHTML = "<p style='color:#aaa'>No match history found.</p>";
-                return;
-            }
-
+            const snap = await db.collection('games').where('playerList', 'array-contains', user.uid).orderBy('timestamp', 'desc').limit(20).get();
+            if(snap.empty) { container.innerHTML = "<p style='color:#aaa'>No history.</p>"; return; }
             container.innerHTML = "";
             snap.forEach(doc => {
                 const g = doc.data();
-                // Identify Opponent
                 let oppName = "Unknown";
-                const myRole = g.players[user.uid]; // 'X' or 'O'
-                
-                // Find name of opponent
-                for(let uid in g.playerDetails) {
-                    if(uid !== user.uid) oppName = g.playerDetails[uid].name;
-                }
-
-                // Identify Result
-                let resultClass = "hist-draw";
-                let resultText = "Draw";
-                
-                if(g.winner) {
-                    if(g.winner === "draw") {
-                        resultClass = "hist-draw"; resultText = "Draw";
-                    } else if (g.winner === myRole) {
-                        resultClass = "hist-win"; resultText = "WON";
-                    } else {
-                        resultClass = "hist-loss"; resultText = "LOST";
-                    }
-                }
-
-                const date = g.timestamp ? new Date(g.timestamp.toDate()).toLocaleDateString() : "-";
-
-                container.innerHTML += `
-                    <div class="history-item ${resultClass}">
-                        <div>
-                            <div style="font-weight:bold;">vs ${oppName}</div>
-                            <div style="font-size:0.75rem; color:#aaa;">${date}</div>
-                        </div>
-                        <div style="font-weight:bold;">${resultText}</div>
-                    </div>
-                `;
+                for(let uid in g.playerDetails) { if(uid !== user.uid) oppName = g.playerDetails[uid].name; }
+                const myR = g.players[user.uid];
+                let resClass="hist-loss", resText="LOST";
+                if(g.winner === 'draw') { resClass="hist-draw"; resText="DRAW"; }
+                else if(g.winner === myR) { resClass="hist-win"; resText="WON"; }
+                const d = g.timestamp ? new Date(g.timestamp.toDate()).toLocaleDateString() : "-";
+                container.innerHTML += `<div class="history-item ${resClass}"><div><div style="font-weight:bold;">vs ${oppName}</div><div style="font-size:0.75rem;color:#aaa;">${d}</div></div><div style="font-weight:bold;">${resText}</div></div>`;
             });
-
-        } catch(e) {
-            console.error(e);
-            container.innerHTML = "<p style='color:#aaa'>Could not load history. (Requires Firestore Index? Check console)</p>";
-        }
+        } catch(e) { container.innerHTML = "Error loading history."; console.log(e); }
     }
 
-    // --- LISTENER ---
+    // --- STATE LISTENER ---
     auth.onAuthStateChanged(async (u) => {
         if(u) {
             user = u;
@@ -469,26 +413,21 @@
         } else { switchView('authScreen'); }
     });
 
-    // --- UI UPDATES ---
     function updateUI() {
         document.getElementById('displayPoints').innerText = userData.points || 0;
         document.getElementById('menuName').innerText = userData.username || "Guest";
         document.getElementById('profileInit').innerText = (userData.username||"G").charAt(0).toUpperCase();
-
         const reqs = userData.friendRequests || [];
         document.getElementById('notifDot').style.display = reqs.length > 0 ? 'block' : 'none';
-        
         const reqList = document.getElementById('requestList');
         if(reqs.length > 0) {
             document.getElementById('requestArea').style.display = 'block';
             reqList.innerHTML = '';
-            reqs.forEach(r => {
-                reqList.innerHTML += `<div class="list-item"><span>${r.username}</span><div><button class="btn-small btn-success" onclick="acceptFriend('${r.uid}','${r.username}')">✓</button> <button class="btn-small btn-danger" onclick="declineFriend('${r.uid}')">X</button></div></div>`;
-            });
+            reqs.forEach(r => { reqList.innerHTML += `<div class="list-item"><span>${r.username}</span><div><button class="btn-small btn-success" onclick="acceptFriend('${r.uid}','${r.username}')">✓</button> <button class="btn-small btn-danger" onclick="declineFriend('${r.uid}')">X</button></div></div>`; });
         } else { document.getElementById('requestArea').style.display = 'none'; }
     }
 
-    // --- GAME INVITE SYSTEM (REAL TIME) ---
+    // --- GAME INVITE ---
     function listenForInvites() {
         if(inviteListener) inviteListener();
         inviteListener = db.collection('invites').where('to', '==', user.uid).where('status', '==', 'pending')
@@ -499,9 +438,7 @@
                 currentInviteId = invite.id;
                 document.getElementById('challengeMsg').innerText = `${invite.fromName} wants to play!`;
                 document.getElementById('challengeModal').style.display = 'flex';
-            } else {
-                document.getElementById('challengeModal').style.display = 'none';
-            }
+            } else { document.getElementById('challengeModal').style.display = 'none'; }
         });
     }
 
@@ -509,82 +446,56 @@
         if(userData.points < 100) return alert("Need 100 Points!");
         document.getElementById('waitingModal').style.display = 'flex';
         document.getElementById('friendSelector').style.display = 'none';
-        
         const docRef = await db.collection('invites').add({
             from: user.uid, fromName: userData.username, to: friendUid, toName: friendName, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         currentInviteId = docRef.id;
-
         const unsub = db.collection('invites').doc(currentInviteId).onSnapshot(async (doc) => {
             const data = doc.data();
             if(data && data.status === 'accepted') {
-                unsub();
-                document.getElementById('waitingModal').style.display = 'none';
+                unsub(); document.getElementById('waitingModal').style.display = 'none';
                 await db.collection('users').doc(user.uid).update({ points: userData.points - 100 });
                 startOnlineGame(data.gameId, 'X');
             } else if (!doc.exists || data.status === 'rejected') {
-                unsub();
-                document.getElementById('waitingModal').style.display = 'none';
-                alert("Invite rejected or cancelled.");
+                unsub(); document.getElementById('waitingModal').style.display = 'none'; alert("Invite rejected.");
             }
         });
     }
 
-    function cancelInvite() {
-        if(currentInviteId) db.collection('invites').doc(currentInviteId).delete();
-        document.getElementById('waitingModal').style.display = 'none';
-    }
+    function cancelInvite() { if(currentInviteId) db.collection('invites').doc(currentInviteId).delete(); document.getElementById('waitingModal').style.display='none'; }
 
     async function acceptChallenge() {
-        if(userData.points < 100) return alert("You need 100 points to accept!");
+        if(userData.points < 100) return alert("Need 100 Points!");
         await db.collection('users').doc(user.uid).update({ points: userData.points - 100 });
         
-        // 1. Get invite details to fetch sender name
-        const invDoc = await db.collection('invites').doc(currentInviteId).get();
-        const invData = invDoc.data();
+        // Fetch inviter name for history
+        const inv = await db.collection('invites').doc(currentInviteId).get();
+        const invData = inv.data();
 
-        // 2. Create Game with Metadata for History
         const gameRef = await db.collection('games').add({
-            board: Array(9).fill(""), 
-            turn: 'X', 
-            winner: null, 
-            players: { [user.uid]: 'O', [invData.from]: 'X' }, // Role map
-            playerList: [user.uid, invData.from], // For Querying
-            playerDetails: {
-                [user.uid]: { name: userData.username },
-                [invData.from]: { name: invData.fromName }
-            },
+            board: Array(9).fill(""), turn: 'X', winner: null,
+            players: { [user.uid]: 'O', [invData.from]: 'X' },
+            playerList: [user.uid, invData.from],
+            playerDetails: { [user.uid]:{name:userData.username}, [invData.from]:{name:invData.fromName} },
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-
         await db.collection('invites').doc(currentInviteId).update({ status: 'accepted', gameId: gameRef.id });
         document.getElementById('challengeModal').style.display = 'none';
         startOnlineGame(gameRef.id, 'O');
     }
 
-    function rejectChallenge() {
-        if(currentInviteId) db.collection('invites').doc(currentInviteId).update({ status: 'rejected' });
-        document.getElementById('challengeModal').style.display = 'none';
-    }
+    function rejectChallenge() { if(currentInviteId) db.collection('invites').doc(currentInviteId).update({ status: 'rejected' }); document.getElementById('challengeModal').style.display='none'; }
 
-    // --- GAMEPLAY LOGIC ---
-    function playBot() {
-        isBot = true; myRole = 'X'; board.fill("");
-        document.querySelectorAll('.cell').forEach(c => { c.innerText=""; c.className="cell"; });
-        switchView('gameScreen');
-        document.getElementById('turnDisplay').innerText = "Turn: X (You)";
-    }
+    // --- GAME ENGINE ---
+    function playBot() { isBot = true; myRole = 'X'; board.fill(""); document.querySelectorAll('.cell').forEach(c => { c.innerText=""; c.className="cell"; }); switchView('gameScreen'); document.getElementById('turnDisplay').innerText = "Turn: X (You)"; }
 
     function startOnlineGame(gameId, role) {
         isBot = false; activeGameId = gameId; myRole = role; board.fill("");
         switchView('gameScreen');
-        
         if(gameListener) gameListener();
         gameListener = db.collection('games').doc(gameId).onSnapshot(doc => {
-            const data = doc.data();
-            if(!data) return; 
-            board = data.board;
-            renderBoard();
+            const data = doc.data(); if(!data) return;
+            board = data.board; renderBoard();
             if(data.winner) handleWin(data.winner);
             else {
                 const isMyTurn = data.turn === myRole;
@@ -594,17 +505,12 @@
         });
     }
 
-    function renderBoard() {
-        document.querySelectorAll('.cell').forEach((c, i) => {
-            c.innerText = board[i];
-            c.className = "cell " + (board[i] ? board[i].toLowerCase() : "");
-        });
-    }
+    function renderBoard() { document.querySelectorAll('.cell').forEach((c, i) => { c.innerText = board[i]; c.className = "cell " + (board[i] ? board[i].toLowerCase() : ""); }); }
 
     async function move(i) {
         if(board[i] !== "") return;
         if(isBot) {
-            if(myRole !== 'X') return; 
+            if(myRole !== 'X') return;
             board[i] = 'X'; renderBoard(); if(checkLocalWin()) return;
             myRole = 'O'; document.getElementById('turnDisplay').innerText = "Bot Thinking...";
             setTimeout(() => {
@@ -614,8 +520,7 @@
             }, 600);
         } else {
             const doc = await db.collection('games').doc(activeGameId).get();
-            const data = doc.data();
-            if(data.turn !== myRole) return alert("Not your turn!");
+            const data = doc.data(); if(data.turn !== myRole) return alert("Not your turn!");
             let newBoard = [...data.board]; newBoard[i] = myRole;
             let nextTurn = myRole === 'X' ? 'O' : 'X';
             let winner = checkWinFromArray(newBoard) ? myRole : null;
@@ -624,21 +529,34 @@
         }
     }
 
+    // --- GAME END HANDLING ---
     function checkLocalWin() {
-        if(checkWinFromArray(board)) { 
-            showWin(myRole === 'X' ? 'You' : 'Bot'); 
-            if(myRole === 'X') db.collection('users').doc(user.uid).update({points: userData.points+50});
-            return true; 
-        }
+        if(checkWinFromArray(board)) { showGameOver(myRole === 'X' ? 'You' : 'Bot'); if(myRole==='X') db.collection('users').doc(user.uid).update({points:userData.points+50}); return true; }
+        if(!board.includes("")) { alert("Draw!"); returnToDash(); return true; }
         return false;
     }
 
-    function handleWin(winnerRole) {
-        if(winnerRole === 'draw') { alert("Draw!"); returnToDash(); } 
-        else {
-            const iWon = winnerRole === myRole;
-            showWin(iWon ? "You" : "Opponent");
-            if(iWon) db.collection('users').doc(user.uid).update({points: userData.points + 200});
+    async function handleWin(winnerRole) {
+        // Fair Play Logic: 
+        // Entry: -100 (Already done)
+        // Winner: +180 (Net +80)
+        // Draw: +90 (Net -10)
+        // Loser: +0 (Net -100)
+
+        const isMe = winnerRole === myRole;
+        const isDraw = winnerRole === 'draw';
+
+        if(isDraw) {
+            showGameOver("Draw");
+            // Add 90 points back
+            await db.collection('users').doc(user.uid).update({ points: userData.points + 90 });
+        } else if(isMe) {
+            showGameOver("You");
+            // Add 180 points
+            await db.collection('users').doc(user.uid).update({ points: userData.points + 180 });
+        } else {
+            showGameOver("Opponent");
+            // Loser gets 0, do nothing
         }
     }
 
@@ -647,87 +565,74 @@
         return w.some(arr => b[arr[0]] && b[arr[0]]===b[arr[1]] && b[arr[1]]===b[arr[2]]);
     }
 
-    function showWin(who) {
+    function showGameOver(who) {
         winAudio.play().catch(e=>{});
-        confetti({particleCount:100});
-        document.getElementById('winnerModal').style.display='flex';
-        document.getElementById('winnerText').innerText = who + " Won!";
-        document.getElementById('winnerMsg').innerText = "Game Over";
+        const modal = document.getElementById('gameOverModal');
+        const emoji = document.getElementById('goEmoji');
+        const title = document.getElementById('goTitle');
+        const msg = document.getElementById('goMsg');
+        const pts = document.getElementById('goPoints');
+        
+        modal.style.display = 'flex';
+        
+        if(who === "Draw") {
+            emoji.innerText = "😐";
+            title.innerText = "Match Draw";
+            title.style.color = "#ffa500";
+            msg.innerText = "It was a tie!";
+            pts.innerText = "Received: 90 Points (Entry returned -10)";
+        } else if (who === "You") {
+            confetti({particleCount:100});
+            emoji.innerText = "😃";
+            title.innerText = "YAY! You have won the match";
+            title.style.color = "#00ff88";
+            msg.innerText = "Victory is yours!";
+            pts.innerText = "Received: 180 Points (Profit +80)";
+        } else if (who === "Bot") {
+            emoji.innerText = "😢"; title.innerText = "OHH! You lose"; msg.innerText = "Better luck next time."; pts.innerText="";
+        } else {
+            // Opponent won (Online)
+            emoji.innerText = "😢";
+            title.innerText = "OHH! You loose the match";
+            title.style.color = "#ff4444";
+            msg.innerText = "Better luck next time.";
+            pts.innerText = "Points Lost: 100";
+        }
     }
 
     function exitGame() { if(confirm("Quit game?")) returnToDash(); }
     function returnToDash() { if(gameListener) gameListener(); switchView('dashboardScreen'); }
 
-    // --- UI/UTILS ---
+    // --- HELPERS (Friends, Utils) ---
     function openGameSelector() {
-        const div = document.getElementById('onlineFriendsList');
-        div.innerHTML = '';
+        const div = document.getElementById('onlineFriendsList'); div.innerHTML = '';
         if(!userData.friends || userData.friends.length===0) return alert("Add friends first!");
         document.getElementById('friendSelector').style.display = 'block';
         userData.friends.forEach(async f => {
-            let status = '⚪';
-            try {
-                const fd = await db.collection('users').doc(f.uid).get();
-                const last = fd.data().lastSeen?.toDate().getTime();
-                if(Date.now() - last < 120000) status = '🟢';
-            } catch(e){}
+            let status = '⚪'; try { const fd = await db.collection('users').doc(f.uid).get(); if(Date.now() - fd.data().lastSeen?.toDate().getTime() < 120000) status = '🟢'; } catch(e){}
             div.innerHTML += `<div class="list-item"><span>${status} ${f.username}</span><button class="btn-small" onclick="sendChallenge('${f.uid}', '${f.username}')">Challenge</button></div>`;
         });
     }
 
     function openFriendModal() {
-        document.getElementById('friendsModal').style.display='flex';
-        document.getElementById('profileDropdown').style.display='none';
+        document.getElementById('friendsModal').style.display='flex'; document.getElementById('profileDropdown').style.display='none';
         let html = '';
-        (userData.friends||[]).forEach(f => {
-            html += `<div class="list-item"><span>${f.username}</span> <button class="btn-small btn-danger" onclick="removeFriend('${f.uid}')">Remove</button></div>`;
-        });
+        (userData.friends||[]).forEach(f => { html += `<div class="list-item"><span>${f.username}</span> <button class="btn-small btn-danger" onclick="removeFriend('${f.uid}')">Remove</button></div>`; });
         document.getElementById('modalFriendList').innerHTML = html || "No friends";
     }
     
-    async function acceptFriend(uid, name) {
-        await db.collection('users').doc(user.uid).update({ friends: firebase.firestore.FieldValue.arrayUnion({uid, username:name}), friendRequests: firebase.firestore.FieldValue.arrayRemove({uid, username:name}) });
-        await db.collection('users').doc(uid).update({ friends: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) });
-    }
-    async function removeFriend(uid) {
-         if(!confirm("Remove friend?")) return;
-         const newF = userData.friends.filter(f => f.uid !== uid);
-         await db.collection('users').doc(user.uid).update({ friends: newF });
-         openFriendModal();
-    }
-    
+    // ... Standard utils (acceptFriend, removeFriend, searchAndAdd, etc) same as before ...
+    async function acceptFriend(uid, name) { await db.collection('users').doc(user.uid).update({ friends: firebase.firestore.FieldValue.arrayUnion({uid, username:name}), friendRequests: firebase.firestore.FieldValue.arrayRemove({uid, username:name}) }); await db.collection('users').doc(uid).update({ friends: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) }); }
+    async function removeFriend(uid) { if(confirm("Remove?")) { const newF = userData.friends.filter(f => f.uid !== uid); await db.collection('users').doc(user.uid).update({ friends: newF }); openFriendModal(); } }
+    async function declineFriend(uid) { const newReqs = userData.friendRequests.filter(r => r.uid !== uid); await db.collection('users').doc(user.uid).update({ friendRequests: newReqs }); }
     function toggleProfile() { const m = document.getElementById('profileDropdown'); m.style.display = m.style.display==='block'?'none':'block'; }
     function switchView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).style.display='block'; setTimeout(()=>document.getElementById(id).classList.add('active'),10); document.getElementById('profileDropdown').style.display='none'; }
     function closeModals() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
     function openAddFriend() { document.getElementById('addFriendModal').style.display='flex'; document.getElementById('profileDropdown').style.display='none'; switchTab('link'); document.getElementById('shareLinkInput').value = window.location.origin + window.location.pathname + "?invite=" + user.uid; }
     function switchTab(t) { document.getElementById('tabLink').style.display=t==='link'?'block':'none'; document.getElementById('tabUser').style.display=t==='user'?'block':'none'; }
     function copyLink() { document.getElementById('shareLinkInput').select(); document.execCommand("copy"); alert("Copied"); }
-    async function searchAndAdd() {
-        const u = document.getElementById('searchUserInput').value.trim();
-        const s = await db.collection('users').where('username','==',u).get();
-        if(s.empty) return alert("Not found");
-        const fid = s.docs[0].id;
-        if(fid===user.uid) return alert("That's you");
-        await db.collection('users').doc(fid).update({ friendRequests: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) });
-        alert("Sent!");
-    }
-    async function checkPendingInvite() {
-        const i = localStorage.getItem('pendingInvite');
-        if(i && i!==user.uid && !userData.friends.find(f=>f.uid===i)) {
-             const d = await db.collection('users').doc(i).get();
-             if(d.exists) {
-                 const f = d.data();
-                 await db.collection('users').doc(user.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:f.uid, username:f.username})});
-                 await db.collection('users').doc(f.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username})});
-                 alert("Friend added via link!");
-             }
-             localStorage.removeItem('pendingInvite');
-        }
-    }
-    async function declineFriend(uid) {
-         const newReqs = userData.friendRequests.filter(r => r.uid !== uid);
-         await db.collection('users').doc(user.uid).update({ friendRequests: newReqs });
-    }
+    async function searchAndAdd() { const u = document.getElementById('searchUserInput').value.trim(); const s = await db.collection('users').where('username','==',u).get(); if(s.empty) return alert("Not found"); const fid = s.docs[0].id; if(fid===user.uid) return alert("Self add error"); await db.collection('users').doc(fid).update({ friendRequests: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) }); alert("Sent!"); }
+    async function checkPendingInvite() { const i = localStorage.getItem('pendingInvite'); if(i && i!==user.uid && !userData.friends.find(f=>f.uid===i)) { const d = await db.collection('users').doc(i).get(); if(d.exists) { const f = d.data(); await db.collection('users').doc(user.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:f.uid, username:f.username})}); await db.collection('users').doc(f.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username})}); alert("Friend added!"); } localStorage.removeItem('pendingInvite'); } }
 </script>
 </body>
 </html>
