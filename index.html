@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe Ultimate: Fair Play</title>
+    <title>Tic-Tac-Toe Ultimate: Neon Edition</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -11,115 +11,217 @@
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --primary: #00d2ff;
-            --bg: #0f2027;
+            --primary: #00f2ff;
+            --secondary: #ff00cc;
+            --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --text: #ffffff;
-            --panel: #1a2a33;
             --success: #00ff88;
             --danger: #ff4444;
-            --draw: #ffa500;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #2c5364, #203a43, #0f2027);
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-gradient);
             color: var(--text);
             margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            overflow: hidden; /* Prevent background scroll */
         }
 
+        /* --- Glassmorphism Container --- */
         .container {
             width: 90%;
-            max-width: 500px;
-            background: rgba(32, 58, 67, 0.95);
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            max-width: 450px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid var(--glass-border);
             position: relative;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.1);
+            animation: fadeIn 0.8s ease-out;
         }
 
-        /* --- UI Components --- */
-        .view { display: none; opacity: 0; transition: opacity 0.3s; }
-        .active { display: block; opacity: 1; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; background: #0f2027; color: white; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--primary); }
+        h2, h3 { font-family: 'Orbitron', sans-serif; text-align: center; margin-top: 0; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
 
-        button { width: 100%; padding: 12px; margin: 8px 0; background: linear-gradient(to right, #00d2ff, #3a7bd5); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,210,255,0.3); }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
-        .btn-danger { background: var(--danger); }
-        .btn-success { background: var(--success); color: #000; }
-        .btn-small { padding: 5px 10px; width: auto; font-size: 0.8rem; margin: 0; }
+        /* --- Inputs & Buttons --- */
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
+            color: white;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+            font-family: 'Poppins', sans-serif;
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
 
-        .validation-msg { color: var(--danger); font-size: 0.8rem; display: none; text-align: left; }
+        /* Main Game Buttons */
+        .btn-game {
+            width: 100%;
+            padding: 18px;
+            margin: 12px 0;
+            background: linear-gradient(90deg, var(--primary), #00a8ff);
+            color: #000;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-game:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 0 25px rgba(0, 242, 255, 0.6); }
 
-        /* --- Animations --- */
-        @keyframes blink { 50% { opacity: 0.4; transform: scale(0.9); } }
-        .blink-emoji { animation: blink 1s infinite; display: inline-block; }
+        /* Secondary Buttons (Outline) */
+        .btn-outline {
+            width: 100%; padding: 12px; margin: 5px 0;
+            background: transparent; border: 2px solid rgba(255,255,255,0.2);
+            color: #ccc; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.3s;
+        }
+        .btn-outline:hover { border-color: var(--text); color: var(--text); background: rgba(255,255,255,0.05); }
 
-        /* --- Header & Profile --- */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; }
-        .profile-icon { cursor: pointer; background: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; position: relative; }
-        .notif-dot { position: absolute; top: 0; right: 0; width: 12px; height: 12px; background: red; border-radius: 50%; display: none; border: 2px solid #fff; }
+        .btn-danger { background: linear-gradient(90deg, #ff416c, #ff4b2b); color: white; border: none; }
+        .btn-success { background: linear-gradient(90deg, #11998e, #38ef7d); color: white; border: none; }
+        
+        .btn-small { padding: 6px 12px; width: auto; font-size: 0.8rem; margin: 0; border-radius: 8px; }
+
+        /* --- Dashboard Header --- */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 25px; padding: 15px;
+            background: rgba(0,0,0,0.2); border-radius: 15px;
+            border: 1px solid var(--glass-border);
+        }
+        .points-box { color: #ffd700; font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 5px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        
+        /* Profile Avatar */
+        .profile-icon {
+            cursor: pointer;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--secondary), var(--primary));
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.5rem;
+            box-shadow: 0 0 15px rgba(255, 0, 204, 0.5);
+            border: 2px solid white;
+            transition: 0.3s;
+            position: relative;
+        }
+        .profile-icon:hover { transform: rotate(10deg) scale(1.1); }
+        .notif-dot { position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: #ff0000; border-radius: 50%; border: 2px solid white; display: none; }
 
         /* --- Modals --- */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 2000;
         }
-        .modal-box { background: var(--panel); padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #444; text-align: center; max-height: 80vh; overflow-y: auto; }
+        .modal-box {
+            background: #1a1a2e; padding: 30px; border-radius: 20px;
+            width: 90%; max-width: 400px; border: 1px solid var(--primary);
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.2);
+            text-align: center; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
         /* Profile Dropdown */
-        #profileDropdown { 
-            position: absolute; top: 75px; right: 20px; 
-            background: var(--panel); padding: 15px; border-radius: 12px; 
-            display: none; z-index: 100; border: 1px solid #444; width: 220px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        #profileDropdown {
+            position: absolute; top: 85px; right: 20px;
+            background: rgba(20, 20, 35, 0.95); padding: 20px; border-radius: 15px;
+            display: none; z-index: 100; border: 1px solid var(--glass-border);
+            width: 240px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
+        #profileDropdown button { text-align: left; padding-left: 15px; }
 
-        /* Online Status Dot */
-        .online-dot { height: 10px; width: 10px; background-color: #bbb; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .is-online { background-color: var(--success); box-shadow: 0 0 5px var(--success); }
-
-        /* List Items */
-        .list-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
-        
-        /* History Items */
-        .history-item { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; border-left: 4px solid #555; }
-        .hist-win { border-left-color: var(--success); }
-        .hist-loss { border-left-color: var(--danger); }
-        .hist-draw { border-left-color: var(--draw); }
+        /* Avatar Selection Grid */
+        .avatar-grid { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
+        .avatar-option { 
+            font-size: 2rem; cursor: pointer; padding: 5px; border-radius: 50%; border: 2px solid transparent; transition: 0.2s; 
+        }
+        .avatar-option:hover { transform: scale(1.2); }
+        .avatar-option.selected { border-color: var(--primary); background: rgba(0, 242, 255, 0.2); }
 
         /* Game Board */
         .game-board {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 20px 0;
-            background: linear-gradient(45deg, #ff00cc, #3333ff, #00d2ff, #ffcc00);
-            background-size: 400% 400%; animation: grad 5s infinite;
-            padding: 6px; border-radius: 12px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 25px 0;
+            padding: 10px; border-radius: 20px; background: rgba(0,0,0,0.2);
         }
-        @keyframes grad { 0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%} }
-        .cell { background: #141e30; height: 90px; display: flex; justify-content: center; align-items: center; font-size: 3rem; cursor: pointer; transition: 0.3s; font-weight: bold;}
-        .cell:hover { transform: scale(1.1); background: #243b55; z-index: 2; box-shadow: 0 0 15px var(--primary); }
-        .cell.x { color: var(--primary); } .cell.o { color: var(--danger); }
-        .cell.disabled { cursor: not-allowed; opacity: 0.5; }
+        .cell {
+            background: rgba(255,255,255,0.05); height: 95px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 3.5rem; cursor: pointer; border-radius: 15px;
+            transition: all 0.2s; font-family: 'Orbitron', sans-serif;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .cell:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); border-color: var(--primary); box-shadow: 0 0 15px var(--primary); }
+        .cell.x { color: var(--primary); text-shadow: 0 0 15px var(--primary); }
+        .cell.o { color: var(--secondary); text-shadow: 0 0 15px var(--secondary); }
 
+        /* Online Status */
+        .online-dot { height: 8px; width: 8px; background-color: #555; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .is-online { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
+        
+        /* List Items */
+        .list-item { 
+            background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; margin-bottom: 8px; 
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .view { display: none; }
+        .active { display: block; }
+        .validation-msg { color: var(--danger); font-size: 0.8rem; display: none; text-align: left; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
+<div id="editProfileModal" class="modal">
+    <div class="modal-box">
+        <h3>Edit Profile</h3>
+        <input type="text" id="editFullName" placeholder="Full Name">
+        <input type="text" id="editUsername" placeholder="Username (Unique)" oninput="validateEditUsername()">
+        <p id="editUserError" class="validation-msg">Invalid format or taken</p>
+        
+        <p style="margin: 10px 0; color:#aaa;">Choose Avatar:</p>
+        <div class="avatar-grid">
+            <div class="avatar-option" onclick="selectAvatar('👽')">👽</div>
+            <div class="avatar-option" onclick="selectAvatar('🐱')">🐱</div>
+            <div class="avatar-option" onclick="selectAvatar('💀')">💀</div>
+            <div class="avatar-option" onclick="selectAvatar('🤖')">🤖</div>
+            <div class="avatar-option" onclick="selectAvatar('🦊')">🦊</div>
+        </div>
+        <input type="hidden" id="selectedAvatar">
+
+        <button onclick="saveProfile()" class="btn-game" style="margin-top:20px;">Save Changes</button>
+        <button onclick="closeModals()" class="btn-outline">Cancel</button>
+    </div>
+</div>
+
 <div id="historyModal" class="modal">
     <div class="modal-box">
         <h3>📜 Match History</h3>
-        <p style="font-size:0.8rem; color:#aaa; margin-top:-10px; margin-bottom:15px;">(Friends Only)</p>
-        <div id="historyListContainer" style="max-height: 300px; overflow-y:auto;">Loading...</div>
+        <p style="font-size:0.8rem; color:#aaa;">(Friends Only)</p>
+        <div id="historyListContainer" style="max-height:300px; overflow-y:auto; text-align:left;">Loading...</div>
         <button onclick="closeModals()" class="btn-outline" style="margin-top:15px;">Close</button>
     </div>
 </div>
@@ -127,9 +229,8 @@
 <div id="forgotPasswordModal" class="modal">
     <div class="modal-box">
         <h3>Reset Password</h3>
-        <p style="color:#aaa; font-size:0.9rem;">Enter your email to receive a reset link.</p>
         <input type="email" id="resetEmailInput" placeholder="Enter your email">
-        <button onclick="sendResetLink()">Send Link</button>
+        <button onclick="sendResetLink()" class="btn-game">Send Link</button>
         <button onclick="closeModals()" class="btn-outline">Cancel</button>
     </div>
 </div>
@@ -137,20 +238,20 @@
 <div id="deleteAccountModal" class="modal">
     <div class="modal-box" style="border: 2px solid red;">
         <h3 style="color:var(--danger)">⚠️ Delete Account?</h3>
-        <p>Are you sure? This action cannot be undone.</p>
-        <button onclick="confirmDeleteAccount()" class="btn-danger">Yes, Delete Everything</button>
+        <p>This action is permanent. You will lose all 💎 and friends.</p>
+        <button onclick="confirmDeleteAccount()" class="btn-danger" style="width:100%; padding:15px; margin-top:10px;">Yes, Delete Everything</button>
         <button onclick="closeModals()" class="btn-outline">Cancel</button>
     </div>
 </div>
 
 <div id="challengeModal" class="modal">
-    <div class="modal-box" style="border: 2px solid var(--primary); box-shadow: 0 0 20px var(--primary);">
-        <h2 style="margin-top:0;">⚔️ Game Request!</h2>
-        <p id="challengeMsg">Player wants to play.</p>
-        <p style="font-size:0.8rem; color: #ffd700;">Entry Fee: 100💎</p>
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button onclick="acceptChallenge()" class="btn-success">Accept & Play</button>
-            <button onclick="rejectChallenge()" class="btn-danger">Reject</button>
+    <div class="modal-box">
+        <h2>⚔️ Challenge!</h2>
+        <p id="challengeMsg" style="font-size:1.2rem; margin:15px 0;">Player wants to play.</p>
+        <p style="color: #ffd700;">Entry Fee: 100💎</p>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="acceptChallenge()" class="btn-success" style="flex:1; padding:15px; border-radius:10px;">Accept</button>
+            <button onclick="rejectChallenge()" class="btn-danger" style="flex:1; padding:15px; border-radius:10px;">Reject</button>
         </div>
     </div>
 </div>
@@ -158,44 +259,43 @@
 <div id="waitingModal" class="modal">
     <div class="modal-box">
         <h3>Waiting for Opponent...</h3>
-        <div class="loader" style="margin: 20px 0; font-size:2rem;">⏳</div>
-        <p>100 Points deducted only if they accept.</p>
+        <div style="font-size:3rem; margin:20px; animation:spin 2s infinite linear;">⏳</div>
         <button onclick="cancelInvite()" class="btn-danger">Cancel Request</button>
     </div>
 </div>
 
-<div id="gameOverModal" class="modal">
+<div id="winnerModal" class="modal">
     <div class="modal-box">
-        <h1 id="goEmoji" class="blink-emoji" style="font-size: 5rem; margin: 0;"></h1>
-        <h2 id="goTitle" style="margin: 10px 0;"></h2>
-        <p id="goMsg" style="font-size: 1.1rem;"></p>
-        <p id="goPoints" style="font-size:0.9rem; color:#ffd700; margin-bottom:20px;"></p>
-        <button onclick="closeModals(); returnToDash();">Back to Menu</button>
+        <h1 id="goEmoji" style="font-size: 5rem; margin: 0;"></h1>
+        <h2 id="goTitle"></h2>
+        <p id="goMsg"></p>
+        <p id="goPoints" style="color:#ffd700; font-weight:bold;"></p>
+        <button onclick="closeModals(); returnToDash();" class="btn-game">Back to Menu</button>
     </div>
 </div>
 
 <div id="friendsModal" class="modal">
     <div class="modal-box">
         <h3>My Friends</h3>
-        <div id="modalFriendList">Loading...</div>
+        <div id="modalFriendList" style="text-align:left;">Loading...</div>
         <button onclick="closeModals()" class="btn-outline" style="margin-top:20px;">Close</button>
     </div>
 </div>
 
 <div id="addFriendModal" class="modal">
     <div class="modal-box">
-        <h3>Add New Friend</h3>
+        <h3>Add Friend</h3>
         <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <button onclick="switchTab('link')" id="btnTabLink">By Link</button>
-            <button onclick="switchTab('user')" id="btnTabUser" class="btn-outline">By Username</button>
+            <button onclick="switchTab('link')" id="btnTabLink" class="btn-outline" style="flex:1;">Link</button>
+            <button onclick="switchTab('user')" id="btnTabUser" class="btn-outline" style="flex:1;">Username</button>
         </div>
         <div id="tabLink">
-            <input type="text" id="shareLinkInput" readonly style="font-size:0.8rem; text-align:center;">
-            <button onclick="copyLink()">Copy Link</button>
+            <input type="text" id="shareLinkInput" readonly style="text-align:center;">
+            <button onclick="copyLink()" class="btn-game">Copy Link</button>
         </div>
         <div id="tabUser" style="display:none;">
             <input type="text" id="searchUserInput" placeholder="Enter exact username">
-            <button onclick="searchAndAdd()">Send Request</button>
+            <button onclick="searchAndAdd()" class="btn-game">Send Request</button>
             <p id="searchMsg" style="font-size:0.8rem; height:20px;"></p>
         </div>
         <button onclick="closeModals()" class="btn-outline" style="margin-top:10px;">Close</button>
@@ -203,67 +303,84 @@
 </div>
 
 <div class="container">
+    
     <div id="authScreen" class="view active">
-        <h2 style="text-align:center">Tic-Tac-Toe Ultimate</h2>
+        <h2>TIC-TAC-TOE <br><span style="color:var(--primary)">ULTIMATE</span></h2>
         <div id="loginForm">
-            <input type="email" id="email" placeholder="Email">
+            <input type="email" id="email" placeholder="Email Address">
             <input type="password" id="password" placeholder="Password">
+            
             <div id="signupFields" style="display:none;">
                 <input type="text" id="fullName" placeholder="Full Name">
-                <input type="text" id="username" placeholder="username (a-z, 0-9, _ only)" oninput="validateUsername()">
-                <p id="usernameError" class="validation-msg">Invalid format!</p>
-                <div style="display:flex; gap:10px; align-items:center; background:rgba(255,255,255,0.1); padding:5px; border-radius:5px;">
-                    <span id="captchaDisplay" style="color:#fff; font-weight:bold; margin-left:10px;">? + ?</span>
-                    <input type="number" id="captchaInput" placeholder="=" style="width:60px;">
+                <input type="text" id="username" placeholder="Username (Unique)" oninput="validateUsername()">
+                <p id="usernameError" class="validation-msg">Invalid characters</p>
+                <div style="display:flex; gap:10px; align-items:center; background:rgba(0,0,0,0.3); padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
+                    <span id="captchaDisplay" style="color:var(--primary); font-weight:bold; font-size:1.2rem;">? + ?</span>
+                    <input type="number" id="captchaInput" placeholder="=" style="width:70px; margin:0; text-align:center;">
                 </div>
             </div>
-            <button onclick="handleAuth()" id="authBtn">Login</button>
-            <p style="text-align:center; font-size:0.9rem;"><a href="#" onclick="openForgotPassword()" style="color:#aaa;">Forgot Password?</a></p>
-            <p style="text-align:center; font-size:0.9rem; cursor:pointer; color:var(--primary)" onclick="toggleAuthMode()">Create Account</p>
+
+            <button onclick="handleAuth()" id="authBtn" class="btn-game">LOGIN</button>
+            
+            <div style="display:flex; justify-content:space-between; margin:10px 0; font-size:0.9rem;">
+                <span onclick="openForgotPassword()" style="color:#aaa; cursor:pointer;">Forgot Password?</span>
+                <span onclick="toggleAuthMode()" style="color:var(--primary); cursor:pointer; font-weight:bold;" id="toggleText">Create Account</span>
+            </div>
+
             <button class="btn-outline" onclick="playAsGuest()">Play as Guest</button>
         </div>
     </div>
 
     <div id="dashboardScreen" class="view">
         <div class="header">
-            <div style="font-weight:bold; color:#ffd700;">💎 <span id="displayPoints">0</span></div>
+            <div class="points-box">💎 <span id="displayPoints">0</span></div>
             <div class="profile-icon" onclick="toggleProfile()">
-                <span id="profileInit">U</span>
+                <span id="profileInit">👽</span>
                 <div id="notifDot" class="notif-dot"></div>
             </div>
         </div>
 
         <div id="profileDropdown">
-            <h4 id="menuName" style="margin:0;">User</h4>
-            <p id="menuEmail" style="font-size:0.7rem; color:#aaa; margin-top:5px;">email</p>
-            <hr style="border-color:#333">
-            <button onclick="openMatchHistory()">📜 Match History</button>
-            <button onclick="openFriendModal()">👥 Friends & Requests</button>
-            <button onclick="openAddFriend()" class="btn-outline">➕ Add New Friend</button>
-            <button onclick="openDeleteAccount()" class="btn-danger" style="margin-top:10px;">Delete Account</button>
-            <button onclick="logout()" class="btn-outline" style="margin-top:5px;">Logout</button>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+                <div id="menuAvatar" style="font-size:2rem;">👽</div>
+                <div>
+                    <h4 id="menuName" style="margin:0; text-align:left;">User</h4>
+                    <p id="menuUsername" style="font-size:0.7rem; color:#aaa; margin:0;">@user</p>
+                </div>
+            </div>
+            
+            <button onclick="openEditProfile()" class="btn-outline">✏️ Edit Profile</button>
+            <button onclick="openMatchHistory()" class="btn-outline">📜 Match History</button>
+            <button onclick="openFriendModal()" class="btn-outline">👥 My Friends</button>
+            <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+            <button onclick="logout()" class="btn-outline" style="color:#aaa;">Logout</button>
+            <button onclick="openDeleteAccount()" class="btn-outline" style="color:var(--danger); border-color:rgba(255,68,68,0.3);">Delete Account</button>
         </div>
 
-        <div id="requestArea" style="display:none; background:rgba(255,165,0,0.1); padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid orange;">
-            <h4 style="margin:0 0 10px 0; color:orange;">Friend Requests 🔔</h4>
+        <div id="requestArea" style="display:none; background:rgba(255,165,0,0.15); padding:15px; border-radius:15px; margin-bottom:20px; border:1px solid orange;">
+            <h4 style="margin:0 0 10px 0; color:orange; text-align:left;">Friend Requests 🔔</h4>
             <div id="requestList"></div>
         </div>
 
-        <h3 style="text-align:center">Play Mode</h3>
-        <button onclick="openGameSelector()">⚔️ Play with Friend (Online)</button>
-        <button onclick="playBot()">🤖 Play vs Bot (Local)</button>
+        <h3 style="margin: 20px 0; opacity:0.8; letter-spacing:2px; font-size:0.9rem;">GAME MODES</h3>
+        <button onclick="openGameSelector()" class="btn-game">
+            <span>⚔️</span> Play Online (100💎)
+        </button>
+        <button onclick="playBot()" class="btn-game" style="background: linear-gradient(90deg, #8e2de2, #4a00e0); color:white;">
+            <span>🤖</span> Play vs Bot (Local)
+        </button>
 
-        <div id="friendSelector" style="display:none; margin-top:15px; background:rgba(0,0,0,0.2); padding:15px; border-radius:10px;">
-            <h4 style="margin-top:0">Select Online Friend</h4>
-            <div id="onlineFriendsList"></div>
+        <div id="friendSelector" style="display:none; margin-top:20px; background:rgba(0,0,0,0.4); padding:20px; border-radius:15px; border:1px solid var(--glass-border);">
+            <h4 style="margin-top:0">Challenge a Friend</h4>
+            <div id="onlineFriendsList" style="text-align:left; max-height:200px; overflow-y:auto;"></div>
             <button onclick="document.getElementById('friendSelector').style.display='none'" class="btn-outline" style="margin-top:10px;">Cancel</button>
         </div>
     </div>
 
     <div id="gameScreen" class="view">
         <div class="header">
-            <button onclick="exitGame()" class="btn-small btn-outline">Quit</button>
-            <div id="turnDisplay" style="font-weight:bold;">Turn: X</div>
+            <button onclick="exitGame()" class="btn-outline" style="width:auto; padding:8px 15px;">Quit</button>
+            <div id="turnDisplay" style="font-weight:bold; font-size:1.2rem; text-shadow:0 0 10px var(--primary);">TURN: X</div>
         </div>
         <div class="game-board">
             <div class="cell" onclick="move(0)"></div>
@@ -318,11 +435,12 @@
         if(user && !user.isAnonymous) db.collection('users').doc(user.uid).update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() }).catch(e=>{});
     }, 60000);
 
-    // --- AUTH ---
+    // --- AUTH & VALIDATION ---
     function toggleAuthMode() {
         isSignup = !isSignup;
         document.getElementById('signupFields').style.display = isSignup ? 'block' : 'none';
-        document.getElementById('authBtn').innerText = isSignup ? 'Sign Up' : 'Login';
+        document.getElementById('authBtn').innerText = isSignup ? 'REGISTER' : 'LOGIN';
+        document.getElementById('toggleText').innerText = isSignup ? 'Back to Login' : 'Create Account';
         if(isSignup) {
             let a = Math.floor(Math.random()*10), b = Math.floor(Math.random()*10);
             captchaRes = a + b;
@@ -334,6 +452,7 @@
         const input = document.getElementById('username');
         const regex = /^[a-z0-9_]+$/;
         document.getElementById('usernameError').style.display = (!regex.test(input.value)) ? 'block' : 'none';
+        return regex.test(input.value);
     }
 
     async function handleAuth() {
@@ -343,62 +462,73 @@
         try {
             if(isSignup) {
                 if(parseInt(document.getElementById('captchaInput').value) !== captchaRes) return alert("Wrong Captcha");
-                btn.disabled = true;
+                if(!validateUsername()) return alert("Invalid Username");
+                btn.disabled = true; btn.innerText = "Checking...";
+                
                 const uname = document.getElementById('username').value.trim();
                 const snap = await db.collection('users').where('username', '==', uname).get();
-                if(!snap.empty) { btn.disabled = false; return alert("Username taken!"); }
+                if(!snap.empty) { btn.disabled = false; btn.innerText = "REGISTER"; return alert("Username taken!"); }
                 
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
                 await db.collection('users').doc(cred.user.uid).set({
                     uid: cred.user.uid, name: document.getElementById('fullName').value, username: uname,
-                    email: email, points: 3000, friends: [], friendRequests: [], ip: systemIP, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    email: email, points: 3000, friends: [], friendRequests: [], ip: systemIP, avatar: '👽',
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                 });
             } else {
                 const cred = await auth.signInWithEmailAndPassword(email, pass);
                 await db.collection('users').doc(cred.user.uid).set({ ip: systemIP, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
             }
-        } catch(e) { alert(e.message); btn.disabled = false; }
+        } catch(e) { alert(e.message); btn.disabled = false; btn.innerText = isSignup ? "REGISTER" : "LOGIN"; }
     }
     function playAsGuest() { auth.signInAnonymously(); }
     function logout() { auth.signOut(); location.reload(); }
 
-    // --- ACCOUNT ACTIONS ---
-    function openForgotPassword() { document.getElementById('forgotPasswordModal').style.display = 'flex'; }
-    async function sendResetLink() {
-        const email = document.getElementById('resetEmailInput').value;
-        if(!email) return alert("Please enter email");
-        try { await auth.sendPasswordResetEmail(email); alert("Link sent!"); closeModals(); } catch(e) { alert(e.message); }
-    }
-
-    function openDeleteAccount() { document.getElementById('deleteAccountModal').style.display = 'flex'; document.getElementById('profileDropdown').style.display = 'none'; }
-    async function confirmDeleteAccount() {
-        if(!user) return;
-        try { await db.collection('users').doc(user.uid).delete(); await user.delete(); alert("Account deleted."); location.reload(); } catch(e) { alert(e.message); }
-    }
-
-    // --- HISTORY ---
-    async function openMatchHistory() {
-        if(user.isAnonymous) return alert("Login required");
-        document.getElementById('historyModal').style.display = 'flex';
+    // --- EDIT PROFILE ---
+    function openEditProfile() {
+        document.getElementById('editProfileModal').style.display = 'flex';
         document.getElementById('profileDropdown').style.display = 'none';
-        const container = document.getElementById('historyListContainer');
-        container.innerHTML = "Loading...";
-        try {
-            const snap = await db.collection('games').where('playerList', 'array-contains', user.uid).orderBy('timestamp', 'desc').limit(20).get();
-            if(snap.empty) { container.innerHTML = "<p style='color:#aaa'>No history.</p>"; return; }
-            container.innerHTML = "";
-            snap.forEach(doc => {
-                const g = doc.data();
-                let oppName = "Unknown";
-                for(let uid in g.playerDetails) { if(uid !== user.uid) oppName = g.playerDetails[uid].name; }
-                const myR = g.players[user.uid];
-                let resClass="hist-loss", resText="LOST";
-                if(g.winner === 'draw') { resClass="hist-draw"; resText="DRAW"; }
-                else if(g.winner === myR) { resClass="hist-win"; resText="WON"; }
-                const d = g.timestamp ? new Date(g.timestamp.toDate()).toLocaleDateString() : "-";
-                container.innerHTML += `<div class="history-item ${resClass}"><div><div style="font-weight:bold;">vs ${oppName}</div><div style="font-size:0.75rem;color:#aaa;">${d}</div></div><div style="font-weight:bold;">${resText}</div></div>`;
-            });
-        } catch(e) { container.innerHTML = "Error loading history."; console.log(e); }
+        document.getElementById('editFullName').value = userData.name || "";
+        document.getElementById('editUsername').value = userData.username || "";
+        selectAvatar(userData.avatar || '👽');
+    }
+
+    let tempAvatar = '👽';
+    function selectAvatar(av) {
+        tempAvatar = av;
+        document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+        // Simple iteration to find clicked element - in prod use better ref
+        event.target.classList.add('selected');
+        document.getElementById('selectedAvatar').value = av;
+    }
+
+    function validateEditUsername() {
+        const val = document.getElementById('editUsername').value;
+        const regex = /^[a-z0-9_]+$/;
+        document.getElementById('editUserError').style.display = regex.test(val) ? 'none' : 'block';
+    }
+
+    async function saveProfile() {
+        const newName = document.getElementById('editFullName').value;
+        const newUser = document.getElementById('editUsername').value.trim();
+        const newAv = tempAvatar;
+        
+        const regex = /^[a-z0-9_]+$/;
+        if(!regex.test(newUser)) return alert("Invalid Username Format");
+
+        // Check uniqueness only if changed
+        if(newUser !== userData.username) {
+            const snap = await db.collection('users').where('username', '==', newUser).get();
+            if(!snap.empty) return alert("Username already taken by someone else.");
+        }
+
+        await db.collection('users').doc(user.uid).update({
+            name: newName,
+            username: newUser,
+            avatar: newAv
+        });
+        alert("Profile Updated!");
+        closeModals();
     }
 
     // --- STATE LISTENER ---
@@ -408,26 +538,52 @@
             if(!u.isAnonymous) {
                 db.collection('users').doc(u.uid).onSnapshot(doc => { if(doc.exists) { userData = doc.data(); updateUI(); checkPendingInvite(); } });
                 listenForInvites();
-            } else { userData = {username:"Guest", points:0, friends:[]}; updateUI(); }
+            } else { userData = {username:"Guest", points:0, friends:[], avatar:'👽'}; updateUI(); }
             switchView('dashboardScreen');
         } else { switchView('authScreen'); }
     });
 
     function updateUI() {
         document.getElementById('displayPoints').innerText = userData.points || 0;
-        document.getElementById('menuName').innerText = userData.username || "Guest";
-        document.getElementById('profileInit').innerText = (userData.username||"G").charAt(0).toUpperCase();
+        document.getElementById('menuName').innerText = userData.name || userData.username || "Guest";
+        document.getElementById('menuUsername').innerText = "@" + (userData.username || "guest");
+        document.getElementById('profileInit').innerText = userData.avatar || '👽';
+        document.getElementById('menuAvatar').innerText = userData.avatar || '👽';
+
         const reqs = userData.friendRequests || [];
         document.getElementById('notifDot').style.display = reqs.length > 0 ? 'block' : 'none';
+        
         const reqList = document.getElementById('requestList');
         if(reqs.length > 0) {
             document.getElementById('requestArea').style.display = 'block';
             reqList.innerHTML = '';
-            reqs.forEach(r => { reqList.innerHTML += `<div class="list-item"><span>${r.username}</span><div><button class="btn-small btn-success" onclick="acceptFriend('${r.uid}','${r.username}')">✓</button> <button class="btn-small btn-danger" onclick="declineFriend('${r.uid}')">X</button></div></div>`; });
+            reqs.forEach(r => {
+                reqList.innerHTML += `
+                <div class="list-item">
+                    <span><b>${r.username}</b> wants to connect</span>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn-small btn-success" onclick="acceptFriend('${r.uid}','${r.username}')">✓</button>
+                        <button class="btn-small btn-danger" onclick="declineFriend('${r.uid}')">X</button>
+                    </div>
+                </div>`;
+            });
         } else { document.getElementById('requestArea').style.display = 'none'; }
     }
 
-    // --- GAME INVITE ---
+    // --- ACCOUNT UTILS ---
+    function openForgotPassword() { document.getElementById('forgotPasswordModal').style.display = 'flex'; }
+    async function sendResetLink() {
+        const email = document.getElementById('resetEmailInput').value;
+        if(!email) return alert("Please enter email");
+        try { await auth.sendPasswordResetEmail(email); alert("Link sent!"); closeModals(); } catch(e) { alert(e.message); }
+    }
+    function openDeleteAccount() { document.getElementById('deleteAccountModal').style.display = 'flex'; document.getElementById('profileDropdown').style.display = 'none'; }
+    async function confirmDeleteAccount() {
+        if(!user) return;
+        try { await db.collection('users').doc(user.uid).delete(); await user.delete(); alert("Account deleted."); location.reload(); } catch(e) { alert(e.message); }
+    }
+
+    // --- GAME INVITE SYSTEM ---
     function listenForInvites() {
         if(inviteListener) inviteListener();
         inviteListener = db.collection('invites').where('to', '==', user.uid).where('status', '==', 'pending')
@@ -436,12 +592,15 @@
                 const invite = snap.docs[0].data();
                 invite.id = snap.docs[0].id;
                 currentInviteId = invite.id;
-                document.getElementById('challengeMsg').innerText = `${invite.fromName} wants to play!`;
+                document.getElementById('challengeMsg').innerText = `@${invite.fromName} challenges you!`;
                 document.getElementById('challengeModal').style.display = 'flex';
             } else { document.getElementById('challengeModal').style.display = 'none'; }
         });
     }
-
+    
+    // ... (Match Making logic same as previous, just updated UI classes) ...
+    // Copying core logic for brevity, assuming established flow:
+    
     async function sendChallenge(friendUid, friendName) {
         if(userData.points < 100) return alert("Need 100 Points!");
         document.getElementById('waitingModal').style.display = 'flex';
@@ -457,41 +616,31 @@
                 await db.collection('users').doc(user.uid).update({ points: userData.points - 100 });
                 startOnlineGame(data.gameId, 'X');
             } else if (!doc.exists || data.status === 'rejected') {
-                unsub(); document.getElementById('waitingModal').style.display = 'none'; alert("Invite rejected.");
+                unsub(); document.getElementById('waitingModal').style.display = 'none'; alert("Cancelled/Rejected");
             }
         });
     }
-
     function cancelInvite() { if(currentInviteId) db.collection('invites').doc(currentInviteId).delete(); document.getElementById('waitingModal').style.display='none'; }
-
     async function acceptChallenge() {
         if(userData.points < 100) return alert("Need 100 Points!");
         await db.collection('users').doc(user.uid).update({ points: userData.points - 100 });
-        
-        // Fetch inviter name for history
         const inv = await db.collection('invites').doc(currentInviteId).get();
         const invData = inv.data();
-
         const gameRef = await db.collection('games').add({
-            board: Array(9).fill(""), turn: 'X', winner: null,
-            players: { [user.uid]: 'O', [invData.from]: 'X' },
-            playerList: [user.uid, invData.from],
-            playerDetails: { [user.uid]:{name:userData.username}, [invData.from]:{name:invData.fromName} },
+            board: Array(9).fill(""), turn: 'X', winner: null, players: { [user.uid]: 'O', [invData.from]: 'X' },
+            playerList: [user.uid, invData.from], playerDetails: { [user.uid]:{name:userData.username}, [invData.from]:{name:invData.fromName} },
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         await db.collection('invites').doc(currentInviteId).update({ status: 'accepted', gameId: gameRef.id });
         document.getElementById('challengeModal').style.display = 'none';
         startOnlineGame(gameRef.id, 'O');
     }
-
     function rejectChallenge() { if(currentInviteId) db.collection('invites').doc(currentInviteId).update({ status: 'rejected' }); document.getElementById('challengeModal').style.display='none'; }
 
     // --- GAME ENGINE ---
-    function playBot() { isBot = true; myRole = 'X'; board.fill(""); document.querySelectorAll('.cell').forEach(c => { c.innerText=""; c.className="cell"; }); switchView('gameScreen'); document.getElementById('turnDisplay').innerText = "Turn: X (You)"; }
-
+    function playBot() { isBot = true; myRole = 'X'; board.fill(""); document.querySelectorAll('.cell').forEach(c => { c.innerText=""; c.className="cell"; }); switchView('gameScreen'); document.getElementById('turnDisplay').innerText = "VS BOT"; }
     function startOnlineGame(gameId, role) {
-        isBot = false; activeGameId = gameId; myRole = role; board.fill("");
-        switchView('gameScreen');
+        isBot = false; activeGameId = gameId; myRole = role; board.fill(""); switchView('gameScreen');
         if(gameListener) gameListener();
         gameListener = db.collection('games').doc(gameId).onSnapshot(doc => {
             const data = doc.data(); if(!data) return;
@@ -499,24 +648,21 @@
             if(data.winner) handleWin(data.winner);
             else {
                 const isMyTurn = data.turn === myRole;
-                document.getElementById('turnDisplay').innerText = isMyTurn ? "YOUR TURN" : "Opponent's Turn";
-                document.getElementById('turnDisplay').style.color = isMyTurn ? "#00ff88" : "#fff";
+                document.getElementById('turnDisplay').innerText = isMyTurn ? "YOUR TURN" : "OPPONENT'S TURN";
+                document.getElementById('turnDisplay').style.color = isMyTurn ? "var(--primary)" : "#ccc";
             }
         });
     }
-
     function renderBoard() { document.querySelectorAll('.cell').forEach((c, i) => { c.innerText = board[i]; c.className = "cell " + (board[i] ? board[i].toLowerCase() : ""); }); }
-
     async function move(i) {
         if(board[i] !== "") return;
         if(isBot) {
-            if(myRole !== 'X') return;
-            board[i] = 'X'; renderBoard(); if(checkLocalWin()) return;
-            myRole = 'O'; document.getElementById('turnDisplay').innerText = "Bot Thinking...";
+            if(myRole !== 'X') return; board[i] = 'X'; renderBoard(); if(checkLocalWin()) return;
+            myRole = 'O'; document.getElementById('turnDisplay').innerText = "BOT THINKING...";
             setTimeout(() => {
                 let avail = board.map((v,k)=>v===""?k:null).filter(v=>v!==null);
                 if(avail.length) { board[avail[Math.floor(Math.random()*avail.length)]] = 'O'; renderBoard(); checkLocalWin(); }
-                myRole = 'X'; document.getElementById('turnDisplay').innerText = "Turn: X (You)";
+                myRole = 'X'; document.getElementById('turnDisplay').innerText = "YOUR TURN";
             }, 600);
         } else {
             const doc = await db.collection('games').doc(activeGameId).get();
@@ -528,89 +674,64 @@
             await db.collection('games').doc(activeGameId).update({ board: newBoard, turn: nextTurn, winner: winner });
         }
     }
-
-    // --- GAME END HANDLING ---
+    
+    // --- WIN/LOSS/HISTORY ---
     function checkLocalWin() {
         if(checkWinFromArray(board)) { showGameOver(myRole === 'X' ? 'You' : 'Bot'); if(myRole==='X') db.collection('users').doc(user.uid).update({points:userData.points+50}); return true; }
         if(!board.includes("")) { alert("Draw!"); returnToDash(); return true; }
         return false;
     }
-
     async function handleWin(winnerRole) {
-        // Fair Play Logic: 
-        // Entry: -100 (Already done)
-        // Winner: +180 (Net +80)
-        // Draw: +90 (Net -10)
-        // Loser: +0 (Net -100)
-
-        const isMe = winnerRole === myRole;
-        const isDraw = winnerRole === 'draw';
-
-        if(isDraw) {
-            showGameOver("Draw");
-            // Add 90 points back
-            await db.collection('users').doc(user.uid).update({ points: userData.points + 90 });
-        } else if(isMe) {
-            showGameOver("You");
-            // Add 180 points
-            await db.collection('users').doc(user.uid).update({ points: userData.points + 180 });
-        } else {
-            showGameOver("Opponent");
-            // Loser gets 0, do nothing
-        }
+        const isMe = winnerRole === myRole; const isDraw = winnerRole === 'draw';
+        if(isDraw) { showGameOver("Draw"); await db.collection('users').doc(user.uid).update({ points: userData.points + 90 }); }
+        else if(isMe) { showGameOver("You"); await db.collection('users').doc(user.uid).update({ points: userData.points + 180 }); }
+        else { showGameOver("Opponent"); }
     }
-
-    function checkWinFromArray(b) {
-        const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-        return w.some(arr => b[arr[0]] && b[arr[0]]===b[arr[1]] && b[arr[1]]===b[arr[2]]);
-    }
-
+    function checkWinFromArray(b) { const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; return w.some(arr => b[arr[0]] && b[arr[0]]===b[arr[1]] && b[arr[1]]===b[arr[2]]); }
     function showGameOver(who) {
         winAudio.play().catch(e=>{});
-        const modal = document.getElementById('gameOverModal');
-        const emoji = document.getElementById('goEmoji');
-        const title = document.getElementById('goTitle');
-        const msg = document.getElementById('goMsg');
-        const pts = document.getElementById('goPoints');
-        
-        modal.style.display = 'flex';
-        
-        if(who === "Draw") {
-            emoji.innerText = "😐";
-            title.innerText = "Match Draw";
-            title.style.color = "#ffa500";
-            msg.innerText = "It was a tie!";
-            pts.innerText = "Received: 90 Points (Entry returned -10)";
-        } else if (who === "You") {
-            confetti({particleCount:100});
-            emoji.innerText = "😃";
-            title.innerText = "YAY! You have won the match";
-            title.style.color = "#00ff88";
-            msg.innerText = "Victory is yours!";
-            pts.innerText = "Received: 180 Points (Profit +80)";
-        } else if (who === "Bot") {
-            emoji.innerText = "😢"; title.innerText = "OHH! You lose"; msg.innerText = "Better luck next time."; pts.innerText="";
-        } else {
-            // Opponent won (Online)
-            emoji.innerText = "😢";
-            title.innerText = "OHH! You loose the match";
-            title.style.color = "#ff4444";
-            msg.innerText = "Better luck next time.";
-            pts.innerText = "Points Lost: 100";
-        }
+        document.getElementById('winnerModal').style.display='flex';
+        const em = document.getElementById('goEmoji'); const ti = document.getElementById('goTitle'); const pts = document.getElementById('goPoints');
+        if(who==="Draw") { em.innerText="😐"; ti.innerText="DRAW!"; pts.innerText="Returned: 90💎"; }
+        else if(who==="You") { confetti({particleCount:150}); em.innerText="🏆"; ti.innerText="VICTORY!"; pts.innerText="Won: 180💎"; ti.style.color="var(--success)"; }
+        else { em.innerText="💀"; ti.innerText="DEFEAT"; pts.innerText="Lost: 100💎"; ti.style.color="var(--danger)"; }
     }
-
-    function exitGame() { if(confirm("Quit game?")) returnToDash(); }
+    function exitGame() { if(confirm("Quit?")) returnToDash(); }
     function returnToDash() { if(gameListener) gameListener(); switchView('dashboardScreen'); }
 
-    // --- HELPERS (Friends, Utils) ---
+    // --- HISTORY UI ---
+    async function openMatchHistory() {
+        if(user.isAnonymous) return alert("Login required");
+        document.getElementById('historyModal').style.display = 'flex';
+        document.getElementById('profileDropdown').style.display = 'none';
+        const container = document.getElementById('historyListContainer');
+        container.innerHTML = "Loading...";
+        try {
+            const snap = await db.collection('games').where('playerList', 'array-contains', user.uid).orderBy('timestamp', 'desc').limit(20).get();
+            if(snap.empty) { container.innerHTML = "<p style='color:#aaa'>No history.</p>"; return; }
+            container.innerHTML = "";
+            snap.forEach(doc => {
+                const g = doc.data();
+                let oppName = "Unknown";
+                for(let uid in g.playerDetails) { if(uid !== user.uid) oppName = g.playerDetails[uid].name; }
+                const myR = g.players[user.uid];
+                let resText="LOST", color="red";
+                if(g.winner === 'draw') { resText="DRAW"; color="orange"; }
+                else if(g.winner === myR) { resText="WON"; color="var(--success)"; }
+                const d = g.timestamp ? new Date(g.timestamp.toDate()).toLocaleDateString() : "-";
+                container.innerHTML += `<div class="list-item"><div><b>vs ${oppName}</b><br><small style="color:#aaa">${d}</small></div><b style="color:${color}">${resText}</b></div>`;
+            });
+        } catch(e) { container.innerHTML = "Error loading history."; }
+    }
+
+    // --- FRIENDS & UI HELPERS ---
     function openGameSelector() {
         const div = document.getElementById('onlineFriendsList'); div.innerHTML = '';
         if(!userData.friends || userData.friends.length===0) return alert("Add friends first!");
         document.getElementById('friendSelector').style.display = 'block';
         userData.friends.forEach(async f => {
             let status = '⚪'; try { const fd = await db.collection('users').doc(f.uid).get(); if(Date.now() - fd.data().lastSeen?.toDate().getTime() < 120000) status = '🟢'; } catch(e){}
-            div.innerHTML += `<div class="list-item"><span>${status} ${f.username}</span><button class="btn-small" onclick="sendChallenge('${f.uid}', '${f.username}')">Challenge</button></div>`;
+            div.innerHTML += `<div class="list-item"><span>${status} ${f.username}</span><button class="btn-small btn-game" style="margin:0; width:auto; padding:5px 15px;" onclick="sendChallenge('${f.uid}', '${f.username}')">PLAY</button></div>`;
         });
     }
 
@@ -621,7 +742,7 @@
         document.getElementById('modalFriendList').innerHTML = html || "No friends";
     }
     
-    // ... Standard utils (acceptFriend, removeFriend, searchAndAdd, etc) same as before ...
+    // Core Friend Logic (Same as before)
     async function acceptFriend(uid, name) { await db.collection('users').doc(user.uid).update({ friends: firebase.firestore.FieldValue.arrayUnion({uid, username:name}), friendRequests: firebase.firestore.FieldValue.arrayRemove({uid, username:name}) }); await db.collection('users').doc(uid).update({ friends: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) }); }
     async function removeFriend(uid) { if(confirm("Remove?")) { const newF = userData.friends.filter(f => f.uid !== uid); await db.collection('users').doc(user.uid).update({ friends: newF }); openFriendModal(); } }
     async function declineFriend(uid) { const newReqs = userData.friendRequests.filter(r => r.uid !== uid); await db.collection('users').doc(user.uid).update({ friendRequests: newReqs }); }
@@ -629,9 +750,9 @@
     function switchView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).style.display='block'; setTimeout(()=>document.getElementById(id).classList.add('active'),10); document.getElementById('profileDropdown').style.display='none'; }
     function closeModals() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
     function openAddFriend() { document.getElementById('addFriendModal').style.display='flex'; document.getElementById('profileDropdown').style.display='none'; switchTab('link'); document.getElementById('shareLinkInput').value = window.location.origin + window.location.pathname + "?invite=" + user.uid; }
-    function switchTab(t) { document.getElementById('tabLink').style.display=t==='link'?'block':'none'; document.getElementById('tabUser').style.display=t==='user'?'block':'none'; }
+    function switchTab(t) { document.getElementById('tabLink').style.display=t==='link'?'block':'none'; document.getElementById('tabUser').style.display=t==='user'?'block':'none'; document.getElementById('btnTabLink').className = t==='link'?'btn-game':'btn-outline'; document.getElementById('btnTabUser').className = t==='user'?'btn-game':'btn-outline'; }
     function copyLink() { document.getElementById('shareLinkInput').select(); document.execCommand("copy"); alert("Copied"); }
-    async function searchAndAdd() { const u = document.getElementById('searchUserInput').value.trim(); const s = await db.collection('users').where('username','==',u).get(); if(s.empty) return alert("Not found"); const fid = s.docs[0].id; if(fid===user.uid) return alert("Self add error"); await db.collection('users').doc(fid).update({ friendRequests: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) }); alert("Sent!"); }
+    async function searchAndAdd() { const u = document.getElementById('searchUserInput').value.trim(); const s = await db.collection('users').where('username','==',u).get(); if(s.empty) return alert("Not found"); const fid = s.docs[0].id; if(fid===user.uid) return alert("Self error"); await db.collection('users').doc(fid).update({ friendRequests: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) }); alert("Sent!"); }
     async function checkPendingInvite() { const i = localStorage.getItem('pendingInvite'); if(i && i!==user.uid && !userData.friends.find(f=>f.uid===i)) { const d = await db.collection('users').doc(i).get(); if(d.exists) { const f = d.data(); await db.collection('users').doc(user.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:f.uid, username:f.username})}); await db.collection('users').doc(f.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username})}); alert("Friend added!"); } localStorage.removeItem('pendingInvite'); } }
 </script>
 </body>
