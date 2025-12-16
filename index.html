@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Ultimate: Online</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --bg: #0f2027;
+            --text: #ffffff;
+            --panel: #1a2a33;
+            --success: #00ff88;
+            --danger: #ff4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #2c5364, #203a43, #0f2027);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: rgba(32, 58, 67, 0.95);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            position: relative;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* --- UI Components --- */
+        .view { display: none; opacity: 0; transition: opacity 0.3s; }
+        .active { display: block; opacity: 1; }
+
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; background: #0f2027; color: white; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--primary); }
+
+        button { width: 100%; padding: 12px; margin: 8px 0; background: linear-gradient(to right, #00d2ff, #3a7bd5); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,210,255,0.3); }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--success); color: #000; }
+        .btn-small { padding: 5px 10px; width: auto; font-size: 0.8rem; margin: 0; }
+        .btn-disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
+
+        .validation-msg { color: var(--danger); font-size: 0.8rem; display: none; text-align: left; }
+
+        /* --- Header & Profile --- */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; }
+        .profile-icon { cursor: pointer; background: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; position: relative; }
+        .notif-dot { position: absolute; top: 0; right: 0; width: 12px; height: 12px; background: red; border-radius: 50%; display: none; border: 2px solid #fff; }
+
+        /* --- Modals --- */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-box { background: var(--panel); padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #444; text-align: center; max-height: 80vh; overflow-y: auto; }
+
+        /* Profile Dropdown */
+        #profileDropdown { 
+            position: absolute; top: 75px; right: 20px; 
+            background: var(--panel); padding: 15px; border-radius: 12px; 
+            display: none; z-index: 100; border: 1px solid #444; width: 220px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+
+        /* Online Status Dot */
+        .online-dot { height: 10px; width: 10px; background-color: #bbb; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .is-online { background-color: var(--success); box-shadow: 0 0 5px var(--success); }
+
+        /* List Items */
+        .list-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+
+        /* Game Board */
+        .game-board {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 20px 0;
+            background: linear-gradient(45deg, #ff00cc, #3333ff, #00d2ff, #ffcc00);
+            background-size: 400% 400%; animation: grad 5s infinite;
+            padding: 6px; border-radius: 12px;
+        }
+        @keyframes grad { 0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%} }
+        .cell { background: #141e30; height: 90px; display: flex; justify-content: center; align-items: center; font-size: 3rem; cursor: pointer; transition: 0.3s; font-weight: bold;}
+        .cell:hover { transform: scale(1.1); background: #243b55; z-index: 2; box-shadow: 0 0 15px var(--primary); }
+        .cell.x { color: var(--primary); } .cell.o { color: var(--danger); }
+        .cell.disabled { cursor: not-allowed; opacity: 0.5; }
+
+    </style>
+</head>
+<body>
+
+<div id="challengeModal" class="modal">
+    <div class="modal-box" style="border: 2px solid var(--primary); box-shadow: 0 0 20px var(--primary);">
+        <h2 style="margin-top:0;">⚔️ Game Request!</h2>
+        <p id="challengeMsg">Player wants to play.</p>
+        <p style="font-size:0.8rem; color: #ffd700;">Cost: 100💎</p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button onclick="acceptChallenge()" class="btn-success">Accept & Play</button>
+            <button onclick="rejectChallenge()" class="btn-danger">Reject</button>
+        </div>
+    </div>
+</div>
+
+<div id="waitingModal" class="modal">
+    <div class="modal-box">
+        <h3>Waiting for Opponent...</h3>
+        <div class="loader" style="margin: 20px 0; font-size:2rem;">⏳</div>
+        <p>Points will only be deducted if they accept.</p>
+        <button onclick="cancelInvite()" class="btn-danger">Cancel Request</button>
+    </div>
+</div>
+
+<div id="winnerModal" class="modal">
+    <div class="modal-box">
+        <h1 style="font-size: 4rem; margin: 0;">🏆</h1>
+        <h2 id="winnerText" style="color: var(--success);">You Won!</h2>
+        <p id="winnerMsg">Congratulation User!</p>
+        <button onclick="closeModals(); returnToDash();">Back to Menu</button>
+    </div>
+</div>
+
+<div id="friendsModal" class="modal">
+    <div class="modal-box">
+        <h3>My Friends</h3>
+        <div id="modalFriendList">Loading...</div>
+        <button onclick="closeModals()" class="btn-outline" style="margin-top:20px;">Close</button>
+    </div>
+</div>
+
+<div id="addFriendModal" class="modal">
+    <div class="modal-box">
+        <h3>Add New Friend</h3>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <button onclick="switchTab('link')" id="btnTabLink">By Link</button>
+            <button onclick="switchTab('user')" id="btnTabUser" class="btn-outline">By Username</button>
+        </div>
+        <div id="tabLink">
+            <input type="text" id="shareLinkInput" readonly style="font-size:0.8rem; text-align:center;">
+            <button onclick="copyLink()">Copy Link</button>
+        </div>
+        <div id="tabUser" style="display:none;">
+            <input type="text" id="searchUserInput" placeholder="Enter exact username">
+            <button onclick="searchAndAdd()">Send Request</button>
+            <p id="searchMsg" style="font-size:0.8rem; height:20px;"></p>
+        </div>
+        <button onclick="closeModals()" class="btn-outline" style="margin-top:10px;">Close</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="authScreen" class="view active">
+        <h2 style="text-align:center">Tic-Tac-Toe Ultimate</h2>
+        <div id="loginForm">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <div id="signupFields" style="display:none;">
+                <input type="text" id="fullName" placeholder="Full Name">
+                <input type="text" id="username" placeholder="username (a-z, 0-9, _ only)" oninput="validateUsername()">
+                <p id="usernameError" class="validation-msg">Invalid format!</p>
+                <div style="display:flex; gap:10px; align-items:center; background:rgba(255,255,255,0.1); padding:5px; border-radius:5px;">
+                    <span id="captchaDisplay" style="color:#fff; font-weight:bold; margin-left:10px;">? + ?</span>
+                    <input type="number" id="captchaInput" placeholder="=" style="width:60px;">
+                </div>
+            </div>
+            <button onclick="handleAuth()" id="authBtn">Login</button>
+            <p style="text-align:center; font-size:0.9rem; cursor:pointer; color:var(--primary)" onclick="toggleAuthMode()">Create Account</p>
+            <button class="btn-outline" onclick="playAsGuest()">Play as Guest</button>
+        </div>
+    </div>
+
+    <div id="dashboardScreen" class="view">
+        <div class="header">
+            <div style="font-weight:bold; color:#ffd700;">💎 <span id="displayPoints">0</span></div>
+            <div class="profile-icon" onclick="toggleProfile()">
+                <span id="profileInit">U</span>
+                <div id="notifDot" class="notif-dot"></div>
+            </div>
+        </div>
+
+        <div id="profileDropdown">
+            <h4 id="menuName" style="margin:0;">User</h4>
+            <p id="menuEmail" style="font-size:0.7rem; color:#aaa; margin-top:5px;">email</p>
+            <hr style="border-color:#333">
+            <button onclick="openFriendModal()">👥 Friends & Requests</button>
+            <button onclick="openAddFriend()" class="btn-outline">➕ Add New Friend</button>
+            <button onclick="logout()" class="btn-outline" style="margin-top:10px;">Logout</button>
+        </div>
+
+        <div id="requestArea" style="display:none; background:rgba(255,165,0,0.1); padding:10px; border-radius:10px; margin-bottom:15px; border:1px solid orange;">
+            <h4 style="margin:0 0 10px 0; color:orange;">Friend Requests 🔔</h4>
+            <div id="requestList"></div>
+        </div>
+
+        <h3 style="text-align:center">Play Mode</h3>
+        <button onclick="openGameSelector()">⚔️ Play with Friend (Online)</button>
+        <button onclick="playBot()">🤖 Play vs Bot (Local)</button>
+
+        <div id="friendSelector" style="display:none; margin-top:15px; background:rgba(0,0,0,0.2); padding:15px; border-radius:10px;">
+            <h4 style="margin-top:0">Select Online Friend</h4>
+            <div id="onlineFriendsList"></div>
+            <button onclick="document.getElementById('friendSelector').style.display='none'" class="btn-outline" style="margin-top:10px;">Cancel</button>
+        </div>
+    </div>
+
+    <div id="gameScreen" class="view">
+        <div class="header">
+            <button onclick="exitGame()" class="btn-small btn-outline">Quit</button>
+            <div id="turnDisplay" style="font-weight:bold;">Turn: X</div>
+        </div>
+        <div class="game-board">
+            <div class="cell" onclick="move(0)"></div>
+            <div class="cell" onclick="move(1)"></div>
+            <div class="cell" onclick="move(2)"></div>
+            <div class="cell" onclick="move(3)"></div>
+            <div class="cell" onclick="move(4)"></div>
+            <div class="cell" onclick="move(5)"></div>
+            <div class="cell" onclick="move(6)"></div>
+            <div class="cell" onclick="move(7)"></div>
+            <div class="cell" onclick="move(8)"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- FIREBASE CONFIG (PASTE YOUR KEYS HERE) ---
+    const firebaseConfig = {
+  apiKey: "AIzaSyCCdm76gDYsn5ZXbeZk1nyVnKB9WHynYx0",
+  authDomain: "tic-tac-toe-a51b9.firebaseapp.com",
+  projectId: "tic-tac-toe-a51b9",
+  storageBucket: "tic-tac-toe-a51b9.firebasestorage.app",
+  messagingSenderId: "920677786280",
+  appId: "1:920677786280:web:6cdca569291f4fbd46989d",
+  measurementId: "G-MSBHQ3H2D2"
+};
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const winAudio = new Audio('win.mp3'); 
+
+    // --- VARIABLES ---
+    let user = null, userData = {}, isSignup = false, captchaRes = 0;
+    let systemIP = "Loading...";
+    
+    // Game State
+    let activeGameId = null;
+    let myRole = 'X'; // 'X' or 'O'
+    let isBot = false;
+    let currentInviteId = null;
+    let board = Array(9).fill("");
+    let gameListener = null;
+    let inviteListener = null;
+
+    // --- INIT ---
+    async function init() {
+        try {
+            let res = await fetch('https://api.ipify.org?format=json');
+            let d = await res.json();
+            systemIP = d.ip;
+        } catch(e) { systemIP = "Unknown"; }
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteCode = urlParams.get('invite');
+        if(inviteCode) localStorage.setItem('pendingInvite', inviteCode);
+    }
+    init();
+
+    // Heartbeat
+    setInterval(() => {
+        if(user && !user.isAnonymous) db.collection('users').doc(user.uid).update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() }).catch(e=>{});
+    }, 60000);
+
+    // --- AUTH ---
+    function toggleAuthMode() {
+        isSignup = !isSignup;
+        document.getElementById('signupFields').style.display = isSignup ? 'block' : 'none';
+        document.getElementById('authBtn').innerText = isSignup ? 'Sign Up' : 'Login';
+        if(isSignup) {
+            let a = Math.floor(Math.random()*10), b = Math.floor(Math.random()*10);
+            captchaRes = a + b;
+            document.getElementById('captchaDisplay').innerText = `${a} + ${b}`;
+        }
+    }
+
+    function validateUsername() {
+        const input = document.getElementById('username');
+        const regex = /^[a-z0-9_]+$/;
+        document.getElementById('usernameError').style.display = (!regex.test(input.value)) ? 'block' : 'none';
+    }
+
+    async function handleAuth() {
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+        const btn = document.getElementById('authBtn');
+        try {
+            if(isSignup) {
+                if(parseInt(document.getElementById('captchaInput').value) !== captchaRes) return alert("Wrong Captcha");
+                btn.disabled = true;
+                const uname = document.getElementById('username').value.trim();
+                const snap = await db.collection('users').where('username', '==', uname).get();
+                if(!snap.empty) { btn.disabled = false; return alert("Username taken!"); }
+                
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                await db.collection('users').doc(cred.user.uid).set({
+                    uid: cred.user.uid, name: document.getElementById('fullName').value, username: uname,
+                    email: email, points: 3000, friends: [], friendRequests: [], ip: systemIP, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } else {
+                const cred = await auth.signInWithEmailAndPassword(email, pass);
+                await db.collection('users').doc(cred.user.uid).set({ ip: systemIP, lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            }
+        } catch(e) { alert(e.message); btn.disabled = false; }
+    }
+    function playAsGuest() { auth.signInAnonymously(); }
+    function logout() { auth.signOut(); location.reload(); }
+
+    // --- LISTENER ---
+    auth.onAuthStateChanged(async (u) => {
+        if(u) {
+            user = u;
+            if(!u.isAnonymous) {
+                db.collection('users').doc(u.uid).onSnapshot(doc => { userData = doc.data(); updateUI(); checkPendingInvite(); });
+                listenForInvites();
+            } else { userData = {username:"Guest", points:0, friends:[]}; updateUI(); }
+            switchView('dashboardScreen');
+        } else { switchView('authScreen'); }
+    });
+
+    // --- UI UPDATES ---
+    function updateUI() {
+        document.getElementById('displayPoints').innerText = userData.points || 0;
+        document.getElementById('menuName').innerText = userData.username || "Guest";
+        document.getElementById('profileInit').innerText = (userData.username||"G").charAt(0).toUpperCase();
+
+        const reqs = userData.friendRequests || [];
+        document.getElementById('notifDot').style.display = reqs.length > 0 ? 'block' : 'none';
+        
+        const reqList = document.getElementById('requestList');
+        if(reqs.length > 0) {
+            document.getElementById('requestArea').style.display = 'block';
+            reqList.innerHTML = '';
+            reqs.forEach(r => {
+                reqList.innerHTML += `<div class="list-item"><span>${r.username}</span><div><button class="btn-small btn-success" onclick="acceptFriend('${r.uid}','${r.username}')">✓</button> <button class="btn-small btn-danger" onclick="declineFriend('${r.uid}')">X</button></div></div>`;
+            });
+        } else { document.getElementById('requestArea').style.display = 'none'; }
+    }
+
+    // --- GAME INVITE SYSTEM (REAL TIME) ---
+    
+    // 1. Listen for incoming invites
+    function listenForInvites() {
+        if(inviteListener) inviteListener();
+        inviteListener = db.collection('invites').where('to', '==', user.uid).where('status', '==', 'pending')
+        .onSnapshot(snap => {
+            if(!snap.empty) {
+                const invite = snap.docs[0].data();
+                invite.id = snap.docs[0].id;
+                currentInviteId = invite.id;
+                // Show Modal
+                document.getElementById('challengeMsg').innerText = `${invite.fromName} wants to play!`;
+                document.getElementById('challengeModal').style.display = 'flex';
+            } else {
+                document.getElementById('challengeModal').style.display = 'none';
+            }
+        });
+    }
+
+    // 2. Sender: Send Invite
+    async function sendChallenge(friendUid, friendName) {
+        if(userData.points < 100) return alert("Need 100 Points!");
+        
+        document.getElementById('waitingModal').style.display = 'flex';
+        document.getElementById('friendSelector').style.display = 'none';
+        
+        // Create Invite
+        const docRef = await db.collection('invites').add({
+            from: user.uid, fromName: userData.username,
+            to: friendUid, toName: friendName,
+            status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        currentInviteId = docRef.id;
+
+        // Listen for Acceptance
+        const unsub = db.collection('invites').doc(currentInviteId).onSnapshot(async (doc) => {
+            const data = doc.data();
+            if(data && data.status === 'accepted') {
+                // Friend Accepted!
+                unsub(); // Stop listening to invite
+                document.getElementById('waitingModal').style.display = 'none';
+                // Deduct Points
+                await db.collection('users').doc(user.uid).update({ points: userData.points - 100 });
+                // Start Game
+                startOnlineGame(data.gameId, 'X');
+            } else if (!doc.exists || data.status === 'rejected') {
+                unsub();
+                document.getElementById('waitingModal').style.display = 'none';
+                alert("Invite rejected or cancelled.");
+            }
+        });
+    }
+
+    function cancelInvite() {
+        if(currentInviteId) db.collection('invites').doc(currentInviteId).delete();
+        document.getElementById('waitingModal').style.display = 'none';
+    }
+
+    // 3. Receiver: Accept/Reject
+    async function acceptChallenge() {
+        if(userData.points < 100) return alert("You need 100 points to accept!");
+        
+        // Deduct My Points
+        await db.collection('users').doc(user.uid).update({ points: userData.points - 100 });
+        
+        // Create Game Room
+        const gameRef = await db.collection('games').add({
+            pX: null, // Filled by sender logic usually, but let's simplify
+            board: Array(9).fill(""), turn: 'X', winner: null,
+            players: { [user.uid]: 'O' } // I am O (Acceptor)
+        });
+
+        // Update Invite to 'accepted' with gameId
+        await db.collection('invites').doc(currentInviteId).update({
+            status: 'accepted', gameId: gameRef.id
+        });
+
+        document.getElementById('challengeModal').style.display = 'none';
+        startOnlineGame(gameRef.id, 'O');
+    }
+
+    function rejectChallenge() {
+        if(currentInviteId) db.collection('invites').doc(currentInviteId).update({ status: 'rejected' });
+        document.getElementById('challengeModal').style.display = 'none';
+    }
+
+    // --- GAMEPLAY LOGIC ---
+    function playBot() {
+        isBot = true; myRole = 'X'; board.fill("");
+        document.querySelectorAll('.cell').forEach(c => { c.innerText=""; c.className="cell"; });
+        switchView('gameScreen');
+        document.getElementById('turnDisplay').innerText = "Turn: X (You)";
+    }
+
+    function startOnlineGame(gameId, role) {
+        isBot = false;
+        activeGameId = gameId;
+        myRole = role;
+        board.fill("");
+        switchView('gameScreen');
+        
+        // Real-time Game Listener
+        if(gameListener) gameListener();
+        gameListener = db.collection('games').doc(gameId).onSnapshot(doc => {
+            const data = doc.data();
+            if(!data) return; // Game deleted
+            
+            board = data.board;
+            renderBoard();
+            
+            if(data.winner) {
+                handleWin(data.winner);
+            } else {
+                const isMyTurn = data.turn === myRole;
+                document.getElementById('turnDisplay').innerText = isMyTurn ? "YOUR TURN" : "Opponent's Turn";
+                document.getElementById('turnDisplay').style.color = isMyTurn ? "#00ff88" : "#fff";
+            }
+        });
+    }
+
+    function renderBoard() {
+        document.querySelectorAll('.cell').forEach((c, i) => {
+            c.innerText = board[i];
+            c.className = "cell " + (board[i] ? board[i].toLowerCase() : "");
+            // Disable if not my turn or taken
+            // We handle click logic in move()
+        });
+    }
+
+    async function move(i) {
+        if(board[i] !== "") return;
+
+        if(isBot) {
+            // Local Bot Logic
+            if(myRole !== 'X') return; // Bot turn
+            board[i] = 'X';
+            renderBoard();
+            if(checkLocalWin()) return;
+            // Bot Move
+            myRole = 'O'; document.getElementById('turnDisplay').innerText = "Bot Thinking...";
+            setTimeout(() => {
+                let avail = board.map((v,k)=>v===""?k:null).filter(v=>v!==null);
+                if(avail.length) {
+                    board[avail[Math.floor(Math.random()*avail.length)]] = 'O';
+                    renderBoard();
+                    checkLocalWin();
+                }
+                myRole = 'X'; document.getElementById('turnDisplay').innerText = "Turn: X (You)";
+            }, 600);
+        } else {
+            // Online Logic
+            // Check if it's my turn
+            const doc = await db.collection('games').doc(activeGameId).get();
+            const data = doc.data();
+            if(data.turn !== myRole) return alert("Not your turn!");
+            
+            // Update Board
+            let newBoard = [...data.board];
+            newBoard[i] = myRole;
+            let nextTurn = myRole === 'X' ? 'O' : 'X';
+            
+            // Check Win (Local check to update DB)
+            let winner = checkWinFromArray(newBoard) ? myRole : null;
+            if(!winner && !newBoard.includes("")) winner = "draw";
+
+            await db.collection('games').doc(activeGameId).update({
+                board: newBoard, turn: nextTurn, winner: winner
+            });
+        }
+    }
+
+    // --- WIN LOGIC ---
+    function checkLocalWin() {
+        if(checkWinFromArray(board)) { 
+            showWin(myRole === 'X' ? 'You' : 'Bot'); 
+            if(myRole === 'O') { /* Bot Won, no points */ } 
+            else { db.collection('users').doc(user.uid).update({points: userData.points+50}); }
+            return true; 
+        }
+        return false;
+    }
+
+    function handleWin(winnerRole) {
+        if(winnerRole === 'draw') {
+            alert("Draw!"); returnToDash();
+        } else {
+            const iWon = winnerRole === myRole;
+            showWin(iWon ? "You" : "Opponent");
+            // Points logic could be handled here or via Cloud Functions for security
+            // For simple client-side: winner adds points
+            if(iWon) db.collection('users').doc(user.uid).update({points: userData.points + 200}); // 200 for online win
+        }
+    }
+
+    function checkWinFromArray(b) {
+        const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        return w.some(arr => b[arr[0]] && b[arr[0]]===b[arr[1]] && b[arr[1]]===b[arr[2]]);
+    }
+
+    function showWin(who) {
+        winAudio.play().catch(e=>{});
+        confetti({particleCount:100});
+        document.getElementById('winnerModal').style.display='flex';
+        document.getElementById('winnerText').innerText = who + " Won!";
+        document.getElementById('winnerMsg').innerText = "Game Over";
+    }
+
+    function exitGame() {
+        if(confirm("Quit game? You might lose points.")) returnToDash();
+    }
+    
+    function returnToDash() {
+        if(gameListener) gameListener();
+        switchView('dashboardScreen');
+    }
+
+    // --- UTILS (UI & Modals) ---
+    function openGameSelector() {
+        const div = document.getElementById('onlineFriendsList');
+        div.innerHTML = '';
+        if(!userData.friends || userData.friends.length===0) return alert("Add friends first!");
+        
+        document.getElementById('friendSelector').style.display = 'block';
+        
+        userData.friends.forEach(async f => {
+            // Check status
+            let status = '⚪';
+            try {
+                const fd = await db.collection('users').doc(f.uid).get();
+                const last = fd.data().lastSeen?.toDate().getTime();
+                if(Date.now() - last < 120000) status = '🟢';
+            } catch(e){}
+
+            div.innerHTML += `
+            <div class="list-item">
+                <span>${status} ${f.username}</span>
+                <button class="btn-small" onclick="sendChallenge('${f.uid}', '${f.username}')">Challenge</button>
+            </div>`;
+        });
+    }
+
+    // --- STANDARD FRIEND LOGIC (Keep from previous) ---
+    function openFriendModal() {
+        document.getElementById('friendsModal').style.display='flex';
+        document.getElementById('profileDropdown').style.display='none';
+        let html = '';
+        (userData.friends||[]).forEach(f => {
+            html += `<div class="list-item"><span>${f.username}</span> <button class="btn-small btn-danger" onclick="removeFriend('${f.uid}')">Remove</button></div>`;
+        });
+        document.getElementById('modalFriendList').innerHTML = html || "No friends";
+    }
+    
+    async function acceptFriend(uid, name) {
+        await db.collection('users').doc(user.uid).update({
+            friends: firebase.firestore.FieldValue.arrayUnion({uid, username:name}),
+            friendRequests: firebase.firestore.FieldValue.arrayRemove({uid, username:name})
+        });
+        await db.collection('users').doc(uid).update({
+            friends: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username})
+        });
+    }
+    
+    // ... Copy other standard Friend/Search functions from previous snippet ...
+    // (Consolidated for brevity - addFriend, searchAndAdd, switchTab, copyLink, checkPendingInvite)
+    
+    function toggleProfile() { 
+        const m = document.getElementById('profileDropdown'); 
+        m.style.display = m.style.display==='block'?'none':'block'; 
+    }
+    function switchView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(id).style.display='block';
+        setTimeout(()=>document.getElementById(id).classList.add('active'),10);
+        document.getElementById('profileDropdown').style.display='none';
+    }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m=>m.style.display='none'); }
+
+    // --- RESTORED HELPER FUNCTIONS ---
+    function openAddFriend() { document.getElementById('addFriendModal').style.display='flex'; document.getElementById('profileDropdown').style.display='none'; switchTab('link'); document.getElementById('shareLinkInput').value = window.location.origin + window.location.pathname + "?invite=" + user.uid; }
+    function switchTab(t) { document.getElementById('tabLink').style.display=t==='link'?'block':'none'; document.getElementById('tabUser').style.display=t==='user'?'block':'none'; }
+    function copyLink() { document.getElementById('shareLinkInput').select(); document.execCommand("copy"); alert("Copied"); }
+    async function searchAndAdd() {
+        const u = document.getElementById('searchUserInput').value.trim();
+        const s = await db.collection('users').where('username','==',u).get();
+        if(s.empty) return alert("Not found");
+        const fid = s.docs[0].id;
+        if(fid===user.uid) return alert("That's you");
+        await db.collection('users').doc(fid).update({ friendRequests: firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username}) });
+        alert("Sent!");
+    }
+    async function checkPendingInvite() {
+        const i = localStorage.getItem('pendingInvite');
+        if(i && i!==user.uid && !userData.friends.find(f=>f.uid===i)) {
+             const d = await db.collection('users').doc(i).get();
+             if(d.exists) {
+                 const f = d.data();
+                 await db.collection('users').doc(user.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:f.uid, username:f.username})});
+                 await db.collection('users').doc(f.uid).update({friends:firebase.firestore.FieldValue.arrayUnion({uid:user.uid, username:userData.username})});
+                 alert("Friend added via link!");
+             }
+             localStorage.removeItem('pendingInvite');
+        }
+    }
+    async function declineFriend(uid) {
+         const newReqs = userData.friendRequests.filter(r => r.uid !== uid);
+         await db.collection('users').doc(user.uid).update({ friendRequests: newReqs });
+    }
+    async function removeFriend(uid) {
+         if(!confirm("Remove friend?")) return;
+         const newF = userData.friends.filter(f => f.uid !== uid);
+         await db.collection('users').doc(user.uid).update({ friends: newF });
+         openFriendModal();
+    }
+</script>
+</body>
+</html>
